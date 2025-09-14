@@ -4,21 +4,19 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
+// helper to get Socket.IO instance
+const getIO = req => req.app.get('io');
+
 // ================= Create a Post =================
 router.post('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { content } = req.body;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ error: 'Post content is required' });
-    }
-
     const [result] = await pool.query(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
       [userId, content]
     );
-
     const postId = result.insertId;
 
     const [rows] = await pool.query(
@@ -29,9 +27,13 @@ router.post('/', auth, async (req, res) => {
       [postId]
     );
 
-    res.status(201).json(rows[0]);
+    const post = rows[0];
+    // broadcast new post
+    getIO(req).emit('new_post', post);
+
+    res.status(201).json(post);
   } catch (err) {
-    console.error('Error creating post:', err);
+    console.error(err);
     res.status(500).json({ error: 'Server error while creating post' });
   }
 });
@@ -78,10 +80,44 @@ router.post('/:postId/like', auth, async (req, res) => {
       [userId, postId]
     );
 
-    res.json({ message: 'Post liked!' });
+    // Get updated like count
+    const [rows] = await pool.query(
+      'SELECT COUNT(*) as likes_count FROM likes WHERE post_id = ?',
+      [postId]
+    );
+    const likes_count = rows[0].likes_count;
+
+    // Emit via Socket.IO
+    const io = req.app.get('io');
+    io.emit('post_liked', { postId, likes_count, userId });
+
+    res.json({ message: 'Post liked!', likes_count });
   } catch (err) {
     console.error('Error liking post:', err);
     res.status(500).json({ error: 'Server error while liking post' });
+  }
+});
+
+router.post('/:postId/unlike', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await pool.query('DELETE FROM likes WHERE user_id=? AND post_id=?', [userId, postId]);
+
+    const [rows] = await pool.query(
+      'SELECT COUNT(*) as likes_count FROM likes WHERE post_id = ?',
+      [postId]
+    );
+    const likes_count = rows[0].likes_count;
+
+    const io = req.app.get('io');
+    io.emit('post_unliked', { postId, likes_count, userId });
+
+    res.json({ message: 'Post unliked!', likes_count });
+  } catch (err) {
+    console.error('Error unliking post:', err);
+    res.status(500).json({ error: 'Server error while unliking post' });
   }
 });
 
@@ -91,10 +127,24 @@ router.post('/:postId/view', auth, async (req, res) => {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    await pool.query(
+    // Insert only if the user hasn't viewed yet
+    const [result] = await pool.query(
       'INSERT IGNORE INTO views (user_id, post_id) VALUES (?, ?)',
       [userId, postId]
     );
+
+    // If new row inserted, emit event to clients
+    if (result.affectedRows > 0) {
+      // Increment aggregate views count (optional)
+      const [rows] = await pool.query(
+        'SELECT COUNT(*) AS views_count FROM views WHERE post_id = ?',
+        [postId]
+      );
+      const views_count = rows[0].views_count;
+
+      const io = req.app.get('io');
+      io.emit('post_viewed', { postId, views_count });
+    }
 
     res.json({ message: 'View recorded!' });
   } catch (err) {
@@ -103,39 +153,13 @@ router.post('/:postId/view', auth, async (req, res) => {
   }
 });
 
+
 // ================= Comments =================
-
-// Get comments for a post
-router.get('/:id/comments', auth, async (req, res) => {
-  try {
-    const postId = req.params.id;
-
-    const [comments] = await pool.query(
-      `SELECT c.id, c.content, c.created_at, u.username
-       FROM comments c
-       JOIN users u ON c.user_id = u.id
-       WHERE c.post_id = ?
-       ORDER BY c.created_at DESC`,
-      [postId]
-    );
-
-    res.json(comments);
-  } catch (err) {
-    console.error('Error fetching comments:', err);
-    res.status(500).json({ error: 'Server error while fetching comments' });
-  }
-});
-
-// Add a comment to a post
-router.post('/:id/comment', auth, async (req, res) => {
+router.post('/:postId/comment', auth, async (req, res) => {
   try {
     const { content } = req.body;
     const userId = req.user.id;
-    const postId = req.params.id;
-
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ error: 'Comment content is required' });
-    }
+    const postId = req.params.postId;
 
     const [result] = await pool.query(
       'INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)',
@@ -143,8 +167,7 @@ router.post('/:id/comment', auth, async (req, res) => {
     );
 
     const commentId = result.insertId;
-
-    const [comment] = await pool.query(
+    const [rows] = await pool.query(
       `SELECT c.id, c.content, c.created_at, u.username
        FROM comments c
        JOIN users u ON c.user_id = u.id
@@ -152,9 +175,12 @@ router.post('/:id/comment', auth, async (req, res) => {
       [commentId]
     );
 
-    res.status(201).json(comment[0]);
+    const comment = rows[0];
+    getIO(req).emit('new_comment', { postId, comment });
+
+    res.status(201).json(comment);
   } catch (err) {
-    console.error('Error adding comment:', err);
+    console.error(err);
     res.status(500).json({ error: 'Server error while adding comment' });
   }
 });

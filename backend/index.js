@@ -1,37 +1,36 @@
-// backend/index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-dotenv.config();
+import http from 'http';
+import { Server } from "socket.io";
 
 import authRoutes from './routes/auth.js';
 import postsRoutes from './routes/posts.js';
 
+dotenv.config();
 const app = express();
+const server = http.createServer(app);
 
-// CORS setup: allow multiple origins dynamically
-const allowedOrigins = [
-  'http://localhost:5173',          // local frontend (dev)
-  'https://frozenapple.vercel.app'  // deployed frontend (prod)
-];
+// Setup Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173", "https://frozenapple.vercel.app"],
+    credentials: true
+  }
+});
+app.set("io", io);  // pass io to routes
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // allow requests with no origin (e.g., Postman, mobile apps)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error(`CORS policy does not allow access from ${origin}`), false);
-    }
-    return callback(null, true);
-  },
+  origin: ["http://localhost:5173", "https://frozenapple.vercel.app"],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 
+// Routes
 app.use('/auth', authRoutes);
 app.use('/posts', postsRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
