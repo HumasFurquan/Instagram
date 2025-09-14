@@ -9,25 +9,30 @@ router.post('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Content required' });
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Post content is required' });
+    }
 
     const [result] = await pool.query(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
       [userId, content]
     );
+
     const postId = result.insertId;
 
     const [rows] = await pool.query(
       `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username
-       FROM posts p JOIN users u ON p.user_id = u.id
+       FROM posts p
+       JOIN users u ON p.user_id = u.id
        WHERE p.id = ?`,
       [postId]
     );
 
-    res.json(rows[0]);
+    res.status(201).json(rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error creating post:', err);
+    res.status(500).json({ error: 'Server error while creating post' });
   }
 });
 
@@ -57,8 +62,8 @@ router.get('/', auth, async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching feed:', err);
+    res.status(500).json({ error: 'Server error while fetching feed' });
   }
 });
 
@@ -67,14 +72,16 @@ router.post('/:postId/like', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
+
     await pool.query(
       'INSERT IGNORE INTO likes (user_id, post_id) VALUES (?, ?)',
       [userId, postId]
     );
+
     res.json({ message: 'Post liked!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error liking post:', err);
+    res.status(500).json({ error: 'Server error while liking post' });
   }
 });
 
@@ -83,52 +90,72 @@ router.post('/:postId/view', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
+
     await pool.query(
       'INSERT IGNORE INTO views (user_id, post_id) VALUES (?, ?)',
       [userId, postId]
     );
+
     res.json({ message: 'View recorded!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error recording view:', err);
+    res.status(500).json({ error: 'Server error while recording view' });
   }
 });
 
 // ================= Comments =================
-router.post('/:postId/comment', auth, async (req, res) => {
+
+// Get comments for a post
+router.get('/:id/comments', auth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { text } = req.body;
-    const { postId } = req.params;
+    const postId = req.params.id;
 
-    if (!text) return res.status(400).json({ error: 'Comment text required' });
-
-    await pool.query(
-      'INSERT INTO comments (user_id, post_id, text) VALUES (?, ?, ?)',
-      [userId, postId, text]
-    );
-    res.json({ message: 'Comment added!' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/:postId/comments', auth, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const [rows] = await pool.query(
-      `SELECT c.id, c.text, c.created_at, u.username
+    const [comments] = await pool.query(
+      `SELECT c.id, c.content, c.created_at, u.username
        FROM comments c
        JOIN users u ON c.user_id = u.id
        WHERE c.post_id = ?
        ORDER BY c.created_at DESC`,
       [postId]
     );
-    res.json(rows);
+
+    res.json(comments);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching comments:', err);
+    res.status(500).json({ error: 'Server error while fetching comments' });
+  }
+});
+
+// Add a comment to a post
+router.post('/:id/comment', auth, async (req, res) => {
+  try {
+    const { content } = req.body;
+    const userId = req.user.id;
+    const postId = req.params.id;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Comment content is required' });
+    }
+
+    const [result] = await pool.query(
+      'INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)',
+      [userId, postId, content]
+    );
+
+    const commentId = result.insertId;
+
+    const [comment] = await pool.query(
+      `SELECT c.id, c.content, c.created_at, u.username
+       FROM comments c
+       JOIN users u ON c.user_id = u.id
+       WHERE c.id = ?`,
+      [commentId]
+    );
+
+    res.status(201).json(comment[0]);
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).json({ error: 'Server error while adding comment' });
   }
 });
 
