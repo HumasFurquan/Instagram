@@ -5,7 +5,13 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-/* CREATE POST (protected) */
+// Helper to emit safely
+function emit(req, event, payload) {
+  const io = req.app.get('io');
+  if (io) io.emit(event, payload);
+}
+
+// ---------------- Create a Post ----------------
 router.post('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -21,11 +27,15 @@ router.post('/', auth, async (req, res) => {
        WHERE p.id = ?`,
       [postId]
     );
-
     const newPost = rows[0];
-    // broadcast new post to everyone
-    const io = req.app.get('io');
-    if (io) io.emit('new_post', newPost);
+
+    // Add initial counts so frontends don't need extra requests
+    newPost.likes_count = 0;
+    newPost.views_count = 0;
+    newPost.comments_count = 0;
+    newPost.liked = 0;
+
+    emit(req, 'new_post', newPost);
 
     res.status(201).json(newPost);
   } catch (err) {
@@ -34,10 +44,10 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-/* GET FEED (protected, so server can calculate `liked` for current user) */
+// ---------------- Feed (auth required) ----------------
 router.get('/', auth, async (req, res) => {
   try {
-    const currentUserId = req.user?.id || null;
+    const currentUserId = req.user.id;
     const [rows] = await pool.query(
       `SELECT
          p.id, p.content, p.created_at,
@@ -56,6 +66,7 @@ router.get('/', auth, async (req, res) => {
        LIMIT 50`,
       [currentUserId]
     );
+
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -63,75 +74,95 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-/* LIKE / UNLIKE */
+// ---------------- Like ----------------
 router.post('/:postId/like', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    const [ins] = await pool.query('INSERT IGNORE INTO likes (user_id, post_id) VALUES (?, ?)', [userId, postId]);
+    await pool.query('INSERT IGNORE INTO likes (user_id, post_id) VALUES (?, ?)', [userId, postId]);
 
     const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
     const likes_count = cntRows[0].likes_count;
 
-    const io = req.app.get('io');
-    if (io && ins.affectedRows > 0) {
-      io.emit('post_liked', { postId: Number(postId), likes_count, userId });
-    }
+    // emit updated count and actor id
+    emit(req, 'post_liked', { postId: Number(postId), likes_count, userId });
+
     res.json({ message: 'Post liked', likes_count });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error while liking' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
+// ---------------- Unlike (DELETE) ----------------
 router.delete('/:postId/like', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    const [del] = await pool.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
+    await pool.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
 
     const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
     const likes_count = cntRows[0].likes_count;
 
-    const io = req.app.get('io');
-    if (io && del.affectedRows > 0) {
-      io.emit('post_unliked', { postId: Number(postId), likes_count, userId });
-    }
-    res.json({ message: 'Unliked', likes_count });
+    // emit updated count and actor id
+    emit(req, 'post_unliked', { postId: Number(postId), likes_count, userId });
+
+    res.json({ message: 'Post unliked', likes_count });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error while unliking' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-/* VIEWS */
+// Optional compatibility route for clients using POST /unlike
+router.post('/:postId/unlike', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await pool.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
+
+    const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+    const likes_count = cntRows[0].likes_count;
+
+    emit(req, 'post_unliked', { postId: Number(postId), likes_count, userId });
+
+    res.json({ message: 'Post unliked', likes_count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ---------------- Views ----------------
 router.post('/:postId/view', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
-    await pool.query('INSERT IGNORE INTO views (user_id, post_id) VALUES (?, ?)', [userId, postId]);
 
-    const [cntRows] = await pool.query('SELECT COUNT(*) AS views_count FROM views WHERE post_id = ?', [postId]);
-    const views_count = cntRows[0].views_count;
+    const [result] = await pool.query('INSERT IGNORE INTO views (user_id, post_id) VALUES (?, ?)', [userId, postId]);
 
-    const io = req.app.get('io');
-    if (io) io.emit('post_viewed', { postId: Number(postId), views_count });
-
-    res.json({ message: 'View recorded', views_count });
+    if (result.affectedRows > 0) {
+      const [cntRows] = await pool.query('SELECT COUNT(*) AS views_count FROM views WHERE post_id = ?', [postId]);
+      const views_count = cntRows[0].views_count;
+      emit(req, 'post_viewed', { postId: Number(postId), views_count });
+      return res.json({ message: 'View recorded', views_count });
+    } else {
+      return res.json({ message: 'Already viewed' });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error while recording view' });
   }
 });
 
-/* COMMENTS */
-
-/* Get comments for a post (public read) */
-router.get('/:postId/comments', async (req, res) => {
+// ---------------- Comments ----------------
+// Get comments for a post
+router.get('/:id/comments', auth, async (req, res) => {
   try {
-    const { postId } = req.params;
+    const postId = req.params.id;
     const [rows] = await pool.query(
       `SELECT c.id, c.content, c.created_at, u.id AS user_id, u.username
        FROM comments c
@@ -142,27 +173,21 @@ router.get('/:postId/comments', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching comments:', err);
+    console.error(err);
     res.status(500).json({ error: 'Could not load comments' });
   }
 });
 
-/* Add a comment (protected) */
-router.post('/:postId/comment', auth, async (req, res) => {
+// Add a comment to a post
+router.post('/:id/comment', auth, async (req, res) => {
   try {
-    const { postId } = req.params;
-    const userId = req.user.id;
     const { content } = req.body;
+    const userId = req.user.id;
+    const postId = req.params.id;
 
-    if (!content || content.trim() === '') {
-      return res.status(400).json({ error: 'Comment content is required' });
-    }
+    if (!content || content.trim() === '') return res.status(400).json({ error: 'Comment content is required' });
 
-    const [result] = await pool.query(
-      'INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)',
-      [userId, postId, content]
-    );
-
+    const [result] = await pool.query('INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)', [userId, postId, content]);
     const commentId = result.insertId;
 
     const [rows] = await pool.query(
@@ -175,12 +200,12 @@ router.post('/:postId/comment', auth, async (req, res) => {
 
     const newComment = rows[0];
 
-    const io = req.app.get('io');
-    if (io) io.emit('new_comment', { postId: Number(postId), comment: newComment });
+    // emit to others: include postId and comment (including user_id)
+    emit(req, 'new_comment', { postId: Number(postId), comment: newComment });
 
     res.status(201).json(newComment);
   } catch (err) {
-    console.error('Error adding comment:', err);
+    console.error(err);
     res.status(500).json({ error: 'Could not add comment' });
   }
 });

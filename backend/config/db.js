@@ -21,4 +21,6 @@ const pool = mysql.createPool({
   // }
 });
 
+console.log(`Connected to MySQL at ${process.env.DB_HOST}:${process.env.DB_PORT}, DB: ${process.env.DB_NAME}`);
+
 export default pool;

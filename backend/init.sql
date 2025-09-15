@@ -34,15 +34,19 @@ CREATE TABLE views (
   viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unique_view (user_id, post_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  INDEX idx_post_id (post_id),
+  INDEX idx_user_id (user_id)
 );
 
 CREATE TABLE comments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   post_id INT NOT NULL,
-  text TEXT NOT NULL,
+  content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  INDEX idx_post_id (post_id),
+  INDEX idx_user_id (user_id)
 );
