@@ -1,28 +1,31 @@
 // backend/index.js
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import http from 'http';
-import { Server as IOServer } from 'socket.io';
+import { Server } from 'socket.io';
 dotenv.config();
 
 import authRoutes from './routes/auth.js';
 import postsRoutes from './routes/posts.js';
 
 const app = express();
+const httpServer = http.createServer(app);
 
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://frozenapple.vercel.app',
-  'https://your-production-domain.com'
+  'http://localhost:5173',          // your vite dev
+  'http://localhost:3000',          // other local dev ports if used
+  'https://frozenapple.vercel.app', // your deployed frontend (example)
+  'https://frozenapple.netlify.app' // another if used
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS not allowed for ${origin}`));
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error(`CORS not allowed for ${origin}`), false);
+    }
+    return callback(null, true);
   },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -30,26 +33,25 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/auth', authRoutes);
-app.use('/posts', postsRoutes);
-
-// create http server and socket.io
-const httpServer = http.createServer(app);
-const io = new IOServer(httpServer, {
+// create socket.io with CORS
+const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
+    methods: ["GET", "POST", "DELETE"],
     credentials: true
   }
 });
 
-// optional: basic connection listener (useful for debugging)
-io.on('connection', (socket) => {
-  console.log('socket connected:', socket.id);
-  socket.on('disconnect', () => console.log('socket disconnected:', socket.id));
+// attach io to app so routes can emit: req.app.get('io')
+app.set('io', io);
+
+io.on('connection', socket => {
+  console.log('socket connected', socket.id);
+  socket.on('disconnect', () => console.log('socket disconnected', socket.id));
 });
 
-// make io available to routes
-app.set('io', io);
+app.use('/auth', authRoutes);
+app.use('/posts', postsRoutes);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

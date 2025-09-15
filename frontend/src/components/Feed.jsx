@@ -13,48 +13,20 @@ export default function Feed() {
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
   useSocket({
-    onNewPost: newPost => {
-      setPosts(prev => [newPost, ...prev]);
-    },
-    // when a like happens on server, it emits post_liked { postId, userId }
-    onPostLiked: ({ postId, userId }) => {
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === postId
-            ? {
-                ...p,
-                // only set liked=true for the client that actually performed the like
-                liked: user?.id === userId ? true : p.liked
-              }
-            : p
-        )
-      );
-    },
-    onPostUnliked: ({ postId, userId }) => {
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === postId
-            ? {
-                ...p,
-                liked: user?.id === userId ? false : p.liked
-              }
-            : p
-        )
-      );
-    },
-    onNewComment: ({ postId, comment }) => {
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === postId
-            ? { ...p, comments: [comment, ...(p.comments || [])], comments_count: (p.comments_count || 0) + 1 }
-            : p
-        )
-      );
-    },
-    onPostViewed: ({ postId }) => {
-      // optional real-time view reaction (not changing like behavior)
-      // left intentionally minimal since you didn't ask to change views UI here
-    }
+    onNewPost: (newPost) => setPosts(prev => [newPost, ...prev]),
+
+    // Always update counts for everyone; do NOT change anyone's 'liked' boolean here
+    onPostLiked: ({ postId, likes_count }) =>
+      setPosts(prev => prev.map(p => (p.id === postId ? { ...p, likes_count } : p))),
+
+    onPostUnliked: ({ postId, likes_count }) =>
+      setPosts(prev => prev.map(p => (p.id === postId ? { ...p, likes_count } : p))),
+
+    onNewComment: ({ postId, comment }) =>
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p)),
+
+    onPostViewed: ({ postId, views_count }) =>
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p))
   });
 
   useEffect(() => {
@@ -68,12 +40,11 @@ export default function Feed() {
       const res = await api.get("/posts", { headers: authHeaders() });
       const serverPosts = (res.data || []).map(p => ({
         ...p,
-        // ensure liked exists
+        likes_count: p.likes_count ?? 0,
+        views_count: p.views_count ?? 0,
+        comments_count: p.comments_count ?? 0,
         liked: !!p.liked,
-        comments: p.comments || [],
-        comments_count: p.comments_count || 0,
-        views_count: p.views_count || 0
-        // NOTE: intentionally not using likes_count per your request
+        comments: p.comments || []
       }));
       setPosts(serverPosts);
     } catch (err) {
@@ -86,9 +57,7 @@ export default function Feed() {
   return (
     <div>
       <h2>Feed {loading && "— loading..."}</h2>
-      {posts.map(p => (
-        <PostItem key={p.id} post={p} user={user} authHeaders={authHeaders} />
-      ))}
+      {posts.map(p => <PostItem key={p.id} post={p} user={user} authHeaders={authHeaders} />)}
       {posts.length === 0 && !loading && <div>No posts yet.</div>}
     </div>
   );
