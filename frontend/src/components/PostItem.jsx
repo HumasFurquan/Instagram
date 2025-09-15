@@ -1,84 +1,46 @@
-import React, { useState, useEffect } from "react";
+// src/components/PostItem.jsx
+import React, { useEffect, useState } from "react";
 import api from "../api";
-import CommentsSection from "./CommentsSection";
+import CommentsSection from "./CommentsSection"; // keep if you have it
 
-export default function PostItem({ post, user, authHeaders, socket }) {
-  const [showComments, setShowComments] = useState(false);
+export default function PostItem({ post, user, authHeaders }) {
   const [localPost, setLocalPost] = useState(post);
+  const [showComments, setShowComments] = useState(false);
 
-  /** ------------------ Likes ------------------ **/
+  // <-- CRITICAL: sync local state when parent post prop updates (socket / server updates)
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
+
   async function toggleLike() {
-    if (!user) return alert("Please login to like posts.");
-    const likedBefore = localPost.liked;
+    if (!user) return; // silently ignore per your instruction
 
-    setLocalPost(prev => ({
-      ...prev,
-      liked: !prev.liked,
-      likes_count: prev.likes_count + (prev.liked ? -1 : 1)
-    }));
+    const wasLiked = !!localPost.liked;
+
+    // optimistic toggle
+    setLocalPost(prev => ({ ...prev, liked: !prev.liked }));
 
     try {
-      if (!likedBefore) {
+      if (!wasLiked) {
+        // like
         await api.post(`/posts/${localPost.id}/like`, {}, { headers: authHeaders() });
       } else {
+        // unlike
         try {
           await api.delete(`/posts/${localPost.id}/like`, { headers: authHeaders() });
-        } catch {
+        } catch (e) {
+          // fallback if server doesn't implement DELETE
           await api.post(`/posts/${localPost.id}/unlike`, {}, { headers: authHeaders() });
         }
       }
+      // do NOT change localPost here beyond optimistic update — server emits and Feed will sync
     } catch (err) {
-      setLocalPost(prev => ({ ...prev, liked: likedBefore, likes_count: post.likes_count }));
-      alert("Failed to update like.");
+      // revert on error
+      setLocalPost(prev => ({ ...prev, liked: wasLiked }));
+      console.error("Like action failed", err);
+      // no alert as you asked
     }
   }
-
-  /** ------------------ Socket.IO Updates ------------------ **/
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleViewed = ({ postId, views_count }) => {
-      if (postId === localPost.id) {
-        setLocalPost(prev => ({ ...prev, views_count }));
-      }
-    };
-
-    const handleLiked = ({ postId, likes_count, userId }) => {
-      if (postId === localPost.id) {
-        const liked = user?.id === userId ? true : localPost.liked;
-        setLocalPost(prev => ({ ...prev, likes_count, liked }));
-      }
-    };
-
-    const handleUnliked = ({ postId, likes_count, userId }) => {
-      if (postId === localPost.id) {
-        const liked = user?.id === userId ? false : localPost.liked;
-        setLocalPost(prev => ({ ...prev, likes_count, liked }));
-      }
-    };
-
-    const handleNewComment = ({ postId, comment }) => {
-      if (postId === localPost.id) {
-        setLocalPost(prev => ({
-          ...prev,
-          comments: [comment, ...(prev.comments || [])],
-          comments_count: (prev.comments_count || 0) + 1
-        }));
-      }
-    };
-
-    socket.on("post_viewed", handleViewed);
-    socket.on("post_liked", handleLiked);
-    socket.on("post_unliked", handleUnliked);
-    socket.on("new_comment", handleNewComment);
-
-    return () => {
-      socket.off("post_viewed", handleViewed);
-      socket.off("post_liked", handleLiked);
-      socket.off("post_unliked", handleUnliked);
-      socket.off("new_comment", handleNewComment);
-    };
-  }, [socket, localPost, user]);
 
   return (
     <div style={{ border: "1px solid #ddd", padding: 8, marginBottom: 12 }}>
@@ -89,7 +51,8 @@ export default function PostItem({ post, user, authHeaders, socket }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 13, color: "#333" }}>
-            {localPost.likes_count} likes · {localPost.views_count} views · {localPost.comments_count} comments
+            {localPost.views_count ?? 0} views · {localPost.comments_count ?? 0} comments
+            {/* intentionally NOT showing the likes number */}
           </div>
         </div>
       </div>
@@ -97,17 +60,30 @@ export default function PostItem({ post, user, authHeaders, socket }) {
       <p style={{ whiteSpace: "pre-wrap" }}>{localPost.content}</p>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={toggleLike} style={{ color: localPost.liked ? "red" : "black" }}>
+        <button
+          onClick={toggleLike}
+          style={{
+            color: localPost.liked ? "red" : "black",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            fontSize: 16
+          }}
+          aria-pressed={localPost.liked ? "true" : "false"}
+        >
           {localPost.liked ? "♥️ Liked" : "♡ Like"}
         </button>
-        <button onClick={() => setShowComments(prev => !prev)}>
-          💬 {localPost.comments_count} Comments
+
+        <button
+          onClick={() => {
+            setShowComments(prev => !prev);
+          }}
+        >
+          💬 {localPost.comments_count ?? 0} Comments
         </button>
       </div>
 
-      {showComments && (
-        <CommentsSection post={localPost} user={user} authHeaders={authHeaders} socket={socket} />
-      )}
+      {showComments && <CommentsSection post={localPost} user={user} authHeaders={authHeaders} />}
     </div>
   );
 }

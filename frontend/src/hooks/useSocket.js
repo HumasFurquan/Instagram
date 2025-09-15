@@ -1,22 +1,33 @@
+// src/hooks/useSocket.js
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-export default function useSocket({ onNewPost, onPostLiked, onPostUnliked, onNewComment, onPostViewed }) {
-  const socket = useRef(null);
+export default function useSocket({ onNewPost, onPostLiked, onPostUnliked, onNewComment, onPostViewed } = {}) {
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    socket.current = io("http://localhost:5000"); // replace with your backend URL
+    // use env base URL or fallback
+    const URL = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+    socketRef.current = io(URL, { transports: ["websocket"] });
 
-    if (onNewPost) socket.current.on("new_post", onNewPost);
-    if (onPostLiked) socket.current.on("post_liked", onPostLiked);
-    if (onPostUnliked) socket.current.on("post_unliked", onPostUnliked);
-    if (onNewComment) socket.current.on("new_comment", onNewComment);
-    if (onPostViewed) socket.current.on("post_viewed", onPostViewed);
+    socketRef.current.on("connect", () => {
+      console.log("socket connected", socketRef.current.id);
+    });
+    socketRef.current.on("disconnect", () => {
+      console.log("socket disconnected");
+    });
+
+    if (onNewPost) socketRef.current.on("new_post", onNewPost);
+    if (onPostLiked) socketRef.current.on("post_liked", onPostLiked);
+    if (onPostUnliked) socketRef.current.on("post_unliked", onPostUnliked);
+    if (onNewComment) socketRef.current.on("new_comment", onNewComment);
+    if (onPostViewed) socketRef.current.on("post_viewed", onPostViewed);
 
     return () => {
-      socket.current.disconnect();
+      socketRef.current?.disconnect();
     };
+    // eslint-disable-next-line
   }, []);
 
-  return socket.current;
+  return socketRef.current;
 }

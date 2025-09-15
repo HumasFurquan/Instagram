@@ -75,49 +75,57 @@ router.post('/:postId/like', auth, async (req, res) => {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    await pool.query(
+    // insert ignore prevents duplicates
+    const [ins] = await pool.query(
       'INSERT IGNORE INTO likes (user_id, post_id) VALUES (?, ?)',
       [userId, postId]
     );
 
-    // Get updated like count
-    const [rows] = await pool.query(
-      'SELECT COUNT(*) as likes_count FROM likes WHERE post_id = ?',
-      [postId]
-    );
-    const likes_count = rows[0].likes_count;
+    // if a new row added -> like happened
+    if (ins.affectedRows > 0) {
+      // get new like count
+      const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+      const likes_count = cntRows[0].likes_count;
 
-    // Emit via Socket.IO
-    const io = req.app.get('io');
-    io.emit('post_liked', { postId, likes_count, userId });
+      // emit to everyone
+      const io = req.app.get('io');
+      if (io) io.emit('post_liked', { postId: Number(postId), likes_count, userId });
 
-    res.json({ message: 'Post liked!', likes_count });
+      return res.json({ message: 'Post liked!', likes_count });
+    }
+
+    // already liked (no change)
+    const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+    res.json({ message: 'Already liked', likes_count: cntRows[0].likes_count });
   } catch (err) {
-    console.error('Error liking post:', err);
-    res.status(500).json({ error: 'Server error while liking post' });
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-router.post('/:postId/unlike', auth, async (req, res) => {
+// Unlike a post (DELETE) -- remove the like
+router.delete('/:postId/like', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    await pool.query('DELETE FROM likes WHERE user_id=? AND post_id=?', [userId, postId]);
+    const [del] = await pool.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
 
-    const [rows] = await pool.query(
-      'SELECT COUNT(*) as likes_count FROM likes WHERE post_id = ?',
-      [postId]
-    );
-    const likes_count = rows[0].likes_count;
+    if (del.affectedRows > 0) {
+      const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+      const likes_count = cntRows[0].likes_count;
 
-    const io = req.app.get('io');
-    io.emit('post_unliked', { postId, likes_count, userId });
+      const io = req.app.get('io');
+      if (io) io.emit('post_unliked', { postId: Number(postId), likes_count, userId });
 
-    res.json({ message: 'Post unliked!', likes_count });
+      return res.json({ message: 'Unliked', likes_count });
+    }
+
+    const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+    res.json({ message: 'No like to remove', likes_count: cntRows[0].likes_count });
   } catch (err) {
-    console.error('Error unliking post:', err);
-    res.status(500).json({ error: 'Server error while unliking post' });
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

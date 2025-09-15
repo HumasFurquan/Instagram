@@ -7,7 +7,6 @@ export default function CreatePost({token}) {
     e.preventDefault();
     try {
       const res = await api.post('/posts', {content}, { headers: { Authorization: `Bearer ${token}` }});
-      alert('Posted!');
       setContent('');
       // optionally fire an event / state to refresh feed
     } catch (err) {

@@ -12,25 +12,49 @@ export default function Feed() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
-  /** Socket.IO hook **/
   useSocket({
-    onNewPost: (newPost) => setPosts(prev => [newPost, ...prev]),
-    onPostLiked: ({ postId, likes_count, userId }) =>
+    onNewPost: newPost => {
+      setPosts(prev => [newPost, ...prev]);
+    },
+    // when a like happens on server, it emits post_liked { postId, userId }
+    onPostLiked: ({ postId, userId }) => {
       setPosts(prev =>
-        prev.map(p => p.id === postId ? { ...p, likes_count, liked: user?.id === userId ? true : p.liked } : p)
-      ),
-    onPostUnliked: ({ postId, likes_count, userId }) =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                // only set liked=true for the client that actually performed the like
+                liked: user?.id === userId ? true : p.liked
+              }
+            : p
+        )
+      );
+    },
+    onPostUnliked: ({ postId, userId }) => {
       setPosts(prev =>
-        prev.map(p => p.id === postId ? { ...p, likes_count, liked: user?.id === userId ? false : p.liked } : p)
-      ),
-    onNewComment: ({ postId, comment }) =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                liked: user?.id === userId ? false : p.liked
+              }
+            : p
+        )
+      );
+    },
+    onNewComment: ({ postId, comment }) => {
       setPosts(prev =>
         prev.map(p =>
           p.id === postId
             ? { ...p, comments: [comment, ...(p.comments || [])], comments_count: (p.comments_count || 0) + 1 }
             : p
         )
-      )
+      );
+    },
+    onPostViewed: ({ postId }) => {
+      // optional real-time view reaction (not changing like behavior)
+      // left intentionally minimal since you didn't ask to change views UI here
+    }
   });
 
   useEffect(() => {
@@ -44,11 +68,12 @@ export default function Feed() {
       const res = await api.get("/posts", { headers: authHeaders() });
       const serverPosts = (res.data || []).map(p => ({
         ...p,
-        likes_count: p.likes_count || 0,
-        views_count: p.views_count || 0,
-        comments_count: p.comments_count || 0,
+        // ensure liked exists
         liked: !!p.liked,
-        comments: p.comments || []
+        comments: p.comments || [],
+        comments_count: p.comments_count || 0,
+        views_count: p.views_count || 0
+        // NOTE: intentionally not using likes_count per your request
       }));
       setPosts(serverPosts);
     } catch (err) {
