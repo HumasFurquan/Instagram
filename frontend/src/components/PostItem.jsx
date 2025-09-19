@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import CommentsSection from "./CommentsSection";
+import { renderContentWithLinks } from "../utils/renderContent";
 
 export default function PostItem({ post, user, authHeaders }) {
   const [localPost, setLocalPost] = useState(post);
@@ -17,17 +18,21 @@ export default function PostItem({ post, user, authHeaders }) {
       content: post.content,
       username: post.username,
       created_at: post.created_at,
-      liked: typeof prev.liked !== 'undefined' ? prev.liked : !!post.liked
+      liked: typeof prev.liked !== "undefined" ? prev.liked : !!post.liked,
     }));
     // eslint-disable-next-line
   }, [post.id, post.likes_count, post.views_count, post.comments_count, post.content]);
 
   async function toggleLike() {
-    if (!user) return alert('Please login to like posts.');
+    if (!user) return alert("Please login to like posts.");
     const wasLiked = !!localPost.liked;
 
     // optimistic update (local only)
-    setLocalPost(prev => ({ ...prev, liked: !prev.liked, likes_count: (prev.likes_count ?? 0) + (prev.liked ? -1 : 1) }));
+    setLocalPost(prev => ({
+      ...prev,
+      liked: !prev.liked,
+      likes_count: (prev.likes_count ?? 0) + (prev.liked ? -1 : 1),
+    }));
 
     try {
       if (!wasLiked) {
@@ -44,7 +49,7 @@ export default function PostItem({ post, user, authHeaders }) {
     } catch (err) {
       // revert
       setLocalPost(prev => ({ ...prev, liked: wasLiked }));
-      console.error('Like error', err);
+      console.error("Like error", err);
     }
   }
 
@@ -53,18 +58,27 @@ export default function PostItem({ post, user, authHeaders }) {
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
           <b>{localPost.username}</b>{" "}
-          <small style={{ color: "#666" }}>{new Date(localPost.created_at).toLocaleString()}</small>
+          <small style={{ color: "#666" }}>
+            {new Date(localPost.created_at).toLocaleString()}
+          </small>
         </div>
         <div style={{ textAlign: "right", fontSize: 13, color: "#333" }}>
           {localPost.views_count ?? 0} views · {localPost.comments_count ?? 0} comments
         </div>
       </div>
 
-      <p style={{ whiteSpace: "pre-wrap" }}>{localPost.content}</p>
+      {/* ✅ Updated: render hashtags & mentions as clickable links */}
+      <p style={{ whiteSpace: "pre-wrap" }}>
+        {renderContentWithLinks(localPost.content)}
+      </p>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button onClick={toggleLike} style={{ color: localPost.liked ? "red" : "black" }}>
-          {localPost.liked ? "♥️" : "♡"} <span style={{ marginLeft: 6 }}>{localPost.likes_count ?? 0}</span>
+        <button
+          onClick={toggleLike}
+          style={{ color: localPost.liked ? "red" : "black" }}
+        >
+          {localPost.liked ? "♥️" : "♡"}{" "}
+          <span style={{ marginLeft: 6 }}>{localPost.likes_count ?? 0}</span>
         </button>
 
         <button onClick={() => setShowComments(prev => !prev)}>
@@ -72,7 +86,9 @@ export default function PostItem({ post, user, authHeaders }) {
         </button>
       </div>
 
-      {showComments && <CommentsSection postId={localPost.id} currentUser={user} />}
+      {showComments && (
+        <CommentsSection postId={localPost.id} currentUser={user} />
+      )}
     </div>
   );
 }

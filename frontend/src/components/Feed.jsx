@@ -9,34 +9,33 @@ export default function Feed() {
   const [showCommentsFor, setShowCommentsFor] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
 
-  const viewedRef = useRef(new Set());
+  const viewedRef = useRef(new Set());            // already-recorded unique views (per session)
+  const viewStartMap = useRef(new Map());        // postId -> timestamp when it became visible
   const observerRef = useRef(null);
 
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
-  // Socket handlers
+  // Socket handlers (unchanged)
   useSocket({
     onNewPost: (newPost) => setPosts(prev => [normalizePost(newPost), ...prev]),
-    onPostLiked: ({ postId, likes_count, userId }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
-    onPostUnliked: ({ postId, likes_count, userId }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
+    onPostLiked: ({ postId, likes_count, userId }) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
+    onPostUnliked: ({ postId, likes_count, userId }) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
     onNewComment: ({ postId, comment }) => {
-      // Prevent double-count for the origin client:
-      if (user && comment.user_id === user.id) return;
+      if (user && comment.user_id === user.id) return; // origin client already handled it
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [comment, ...(p.comments || [])], comments_count: (p.comments_count || 0) + 1 } : p));
     },
-    onPostViewed: ({ postId, views_count }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p))
+    onPostViewed: ({ postId, views_count }) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p))
   });
 
   useEffect(() => {
     loadPosts();
+
+    // cleanup on unmount: disconnect observer and flush any in-progress view durations
     return () => {
       if (observerRef.current) observerRef.current.disconnect();
+      flushAllOngoingViews();
     };
     // eslint-disable-next-line
   }, []);
@@ -58,7 +57,7 @@ export default function Feed() {
       const res = await api.get('/posts', { headers: authHeaders() });
       const serverPosts = (res.data || []).map(normalizePost);
       setPosts(serverPosts);
-      setupObserver();
+      setupObserver(); // attach observer after posts are rendered
     } catch (err) {
       console.error('Failed to load posts', err);
     } finally {
@@ -66,25 +65,79 @@ export default function Feed() {
     }
   }
 
+  // ------------------- IntersectionObserver & view-duration tracking -------------------
   function setupObserver() {
     if (observerRef.current) observerRef.current.disconnect();
+
     observerRef.current = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        const postId = entry.target.dataset.postId;
-        if (entry.isIntersecting && postId && !viewedRef.current.has(String(postId))) {
-          viewedRef.current.add(String(postId));
-          setPosts(prev => prev.map(p => String(p.id) === String(postId) ? { ...p, views_count: (p.views_count || 0) + 1 } : p));
-          recordView(postId);
+        const el = entry.target;
+        const postId = el.dataset.postId;
+        if (!postId) return;
+
+        // when element becomes visible
+        if (entry.isIntersecting) {
+          // start timer
+          viewStartMap.current.set(String(postId), Date.now());
+
+          // record unique view immediately (server ensures uniqueness via INSERT IGNORE)
+          if (!viewedRef.current.has(String(postId))) {
+            viewedRef.current.add(String(postId));
+            // optimistic UI increment
+            setPosts(prev => prev.map(p => (String(p.id) === String(postId) ? { ...p, views_count: (p.views_count || 0) + 1 } : p)));
+            // send the server-side "unique view" record
+            recordView(postId);
+          }
+        } else {
+          // element left viewport - compute duration and send an event if meaningful
+          const start = viewStartMap.current.get(String(postId));
+          if (start) {
+            const durationSec = (Date.now() - start) / 1000;
+            viewStartMap.current.delete(String(postId));
+
+            // threshold for considering a "real view" duration event (customize)
+            const MIN_VIEW_SEC = 2;
+
+            if (durationSec >= MIN_VIEW_SEC) {
+              sendEvent('view', postId, { duration: durationSec });
+            } else {
+              // optionally track short view end
+              sendEvent('view_end', postId, { duration: durationSec });
+            }
+          }
         }
       });
-    }, { threshold: 0.5 });
+    }, { threshold: 0.5 }); // fire when 50% visible (tweak as needed)
 
+    // Attach to elements currently in DOM
+    // small timeout ensures render completed
     setTimeout(() => {
       document.querySelectorAll('[data-post-id]').forEach(el => observerRef.current.observe(el));
-    }, 50);
+    }, 60);
   }
 
+  // flush remaining durations (called on unmount / page unload)
+  function flushAllOngoingViews() {
+    for (const [postId, startTs] of viewStartMap.current.entries()) {
+      const durationSec = (Date.now() - startTs) / 1000;
+      if (durationSec > 0) {
+        // best-effort (don't await)
+        sendEvent('view', postId, { duration: durationSec }).catch(() => {});
+      }
+    }
+    viewStartMap.current.clear();
+  }
+
+  // Ensure we flush on page close / reload too
+  useEffect(() => {
+    const onBeforeUnload = () => flushAllOngoingViews();
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
+
+  // ------------------- API helpers -------------------
   async function recordView(postId) {
+    // records a unique view in views table (server does INSERT IGNORE)
     if (!user || !token) return;
     try {
       const res = await api.post(`/posts/${postId}/view`, {}, { headers: authHeaders() });
@@ -92,41 +145,45 @@ export default function Feed() {
         setPosts(prev => prev.map(p => p.id === Number(postId) ? { ...p, views_count: res.data.views_count } : p));
       }
     } catch (err) {
-      // ignore silently
+      // ignore non-fatal
     }
   }
 
-  // ---------- likes ----------
+  async function sendEvent(eventType, postId, value = {}) {
+    // small wrapper to POST /events
+    if (!user || !token) return;
+    try {
+      await api.post('/events', { postId, event_type: eventType, value }, { headers: authHeaders() });
+    } catch (err) {
+      // non-fatal, but log for debugging
+      console.error('Failed to send event', eventType, postId, err);
+    }
+  }
+
+  // ---------- likes (same as your code) ----------
   async function toggleLike(postId) {
     if (!user || !token) return alert('Please login to like posts.');
     const post = posts.find(p => p.id === postId);
     if (!post) return;
-
     const likedBefore = post.liked;
-
-    // optimistic toggle for this client only
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: !p.liked, likes_count: (p.likes_count || 0) + (p.liked ? -1 : 1) } : p));
-
     try {
       if (!likedBefore) {
         await api.post(`/posts/${postId}/like`, {}, { headers: authHeaders() });
       } else {
-        // prefer DELETE
         try {
           await api.delete(`/posts/${postId}/like`, { headers: authHeaders() });
         } catch {
           await api.post(`/posts/${postId}/unlike`, {}, { headers: authHeaders() });
         }
       }
-      // server will emit post_liked/post_unliked with updated likes_count
     } catch (err) {
-      // revert
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: likedBefore, likes_count: post.likes_count || 0 } : p));
       alert('Could not update like — please try again.');
     }
   }
 
-  // ---------- comments ----------
+  // ---------- comments (unchanged) ----------
   async function fetchComments(postId) {
     try {
       const res = await api.get(`/posts/${postId}/comments`, { headers: authHeaders() });
@@ -140,7 +197,6 @@ export default function Feed() {
   async function addComment(postId, text, clearInput) {
     if (!user || !token) return alert('Please login to comment.');
     if (!text || !text.trim()) return;
-
     const tempId = 't-' + Date.now();
     const tempComment = {
       id: tempId,
@@ -151,20 +207,13 @@ export default function Feed() {
       created_at: new Date().toISOString(),
       isTemp: true
     };
-
-    // optimistic add
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [tempComment, ...(p.comments || [])], comments_count: (p.comments_count || 0) + 1 } : p));
     clearInput();
-
     try {
       const res = await api.post(`/posts/${postId}/comment`, { content: text }, { headers: authHeaders() });
       const newComment = res.data;
-
-      // replace temp with server comment (match by temp id)
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: p.comments.map(c => (c.id === tempId ? newComment : c)) } : p));
-      // note: server emits new_comment to other clients; we ignore it on origin client in socket handler
     } catch (err) {
-      // remove temp and decrement count
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: p.comments.filter(c => c.id !== tempId), comments_count: Math.max((p.comments_count || 1) - 1, 0) } : p));
       alert('Failed to add comment.');
     }
@@ -174,6 +223,7 @@ export default function Feed() {
   const onCommentChange = (postId, value) => setCommentInputs(prev => ({ ...prev, [postId]: value }));
   const clearCommentInput = (postId) => setCommentInputs(prev => ({ ...prev, [postId]: '' }));
 
+  // Render (unchanged except the elements have data-post-id attributes; observer attaches to those)
   return (
     <div>
       <h2>Feed {loading ? '— loading...' : ''}</h2>

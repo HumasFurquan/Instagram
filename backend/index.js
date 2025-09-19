@@ -9,6 +9,7 @@ dotenv.config();
 
 import authRoutes from './routes/auth.js';
 import postsRoutes from './routes/posts.js';
+import eventsRoutes from './routes/events.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -53,6 +54,7 @@ io.on('connection', socket => {
 
 app.use('/auth', authRoutes);
 app.use('/posts', postsRoutes);
+app.use('/events', eventsRoutes);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

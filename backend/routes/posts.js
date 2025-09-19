@@ -18,9 +18,41 @@ router.post('/', auth, async (req, res) => {
     const { content } = req.body;
     if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
 
-    const [result] = await pool.query('INSERT INTO posts (user_id, content) VALUES (?, ?)', [userId, content]);
+    // Insert post
+    const [result] = await pool.query(
+      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+      [userId, content]
+    );
     const postId = result.insertId;
 
+    // Parse hashtags (#something)
+    const hashtags = [...new Set((content.match(/#\w+/g) || []).map(tag => tag.toLowerCase()))];
+    for (let tag of hashtags) {
+      const [rows] = await pool.query('INSERT IGNORE INTO hashtags (tag) VALUES (?)', [tag]);
+      const [tagRow] = await pool.query('SELECT id FROM hashtags WHERE tag = ?', [tag]);
+      await pool.query('INSERT IGNORE INTO post_hashtags (post_id, hashtag_id) VALUES (?, ?)', [postId, tagRow[0].id]);
+    }
+
+  // Parse mentions (@username)
+  const mentions = [...new Set((content.match(/@\w+/g) || []).map(m => m.substring(1)))];
+
+  for (let username of mentions) {
+    const [userRows] = await pool.query(
+      'SELECT id FROM users WHERE username = ?',
+      [username]
+    );
+
+    if (userRows.length > 0) {
+      await pool.query(
+        'INSERT INTO post_mentions (post_id, mentioned_user_id) VALUES (?, ?)',
+        [postId, userRows[0].id]
+      );
+    } else {
+      console.warn(`⚠️ Mentioned username "${username}" not found in users table`);
+    }
+  }
+
+    // Fetch the full post back
     const [rows] = await pool.query(
       `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username
        FROM posts p JOIN users u ON p.user_id = u.id
@@ -29,7 +61,7 @@ router.post('/', auth, async (req, res) => {
     );
     const newPost = rows[0];
 
-    // Add initial counts so frontends don't need extra requests
+    // Add counts
     newPost.likes_count = 0;
     newPost.views_count = 0;
     newPost.comments_count = 0;
@@ -55,19 +87,36 @@ router.get('/', auth, async (req, res) => {
          COUNT(DISTINCT l.id) AS likes_count,
          COUNT(DISTINCT v.id) AS views_count,
          COUNT(DISTINCT c.id) AS comments_count,
-         MAX(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS liked
+         MAX(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS liked,
+         GROUP_CONCAT(DISTINCT h.tag) AS hashtags,
+         GROUP_CONCAT(DISTINCT mu.username) AS mentions
        FROM posts p
        JOIN users u ON p.user_id = u.id
        LEFT JOIN likes l ON l.post_id = p.id
        LEFT JOIN views v ON v.post_id = p.id
        LEFT JOIN comments c ON c.post_id = p.id
+       LEFT JOIN post_hashtags ph ON ph.post_id = p.id
+       LEFT JOIN hashtags h ON ph.hashtag_id = h.id
+       LEFT JOIN post_mentions pm ON pm.post_id = p.id
+       LEFT JOIN users mu ON pm.mentioned_user_id = mu.id
        GROUP BY p.id, p.content, p.created_at, u.id, u.username
        ORDER BY p.created_at DESC
        LIMIT 50`,
       [currentUserId]
     );
 
-    res.json(rows);
+    // convert comma lists to arrays
+    const transformed = rows.map(r => ({
+      ...r,
+      likes_count: Number(r.likes_count || 0),
+      views_count: Number(r.views_count || 0),
+      comments_count: Number(r.comments_count || 0),
+      liked: Boolean(r.liked),
+      hashtags: r.hashtags ? r.hashtags.split(',') : [],
+      mentions: r.mentions ? r.mentions.split(',') : []
+    }));
+
+    res.json(transformed);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -175,6 +224,28 @@ router.get('/:id/comments', auth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not load comments' });
+  }
+});
+
+// GET posts by hashtag
+router.get('/hashtag/:tag/posts', auth, async (req, res) => {
+  const tag = req.params.tag;
+  try {
+    const [rows] = await pool.query(
+      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username
+       FROM posts p
+       JOIN post_hashtags ph ON ph.post_id = p.id
+       JOIN hashtags h ON h.id = ph.hashtag_id
+       JOIN users u ON p.user_id = u.id
+       WHERE h.tag = ?
+       ORDER BY p.created_at DESC
+       LIMIT 100`,
+      [tag]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

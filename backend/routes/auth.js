@@ -8,18 +8,35 @@ dotenv.config();
 
 const router = express.Router();
 
+// helper function
+function cleanUsername(raw) {
+  return raw.toLowerCase().replace(/\s+/g, ''); // lowercase + remove spaces
+}
+
 // Signup
 router.post('/signup', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+    let { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Missing fields' });
+    }
 
-    // check existing
+    // clean username
+    username = cleanUsername(username);
+
+    // check existing by email
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length) return res.status(400).json({ error: 'Email taken' });
 
-    const hashed = await bcrypt.hash(password, 10); // salt rounds 10
-    const [result] = await pool.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, hashed]);
+    // also check if username taken
+    const [existingUser] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+    if (existingUser.length) return res.status(400).json({ error: 'Username taken' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const [result] = await pool.query(
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+      [username, email, hashed]
+    );
     const userId = result.insertId;
 
     const token = jwt.sign({ id: userId, username }, process.env.JWT_SECRET, { expiresIn: '7d' });
