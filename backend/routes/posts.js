@@ -76,18 +76,26 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// ---------------- Feed (auth required) ----------------
+// ---------------- Feed (auth required, only followees + self) ----------------
 router.get('/', auth, async (req, res) => {
   try {
     const currentUserId = req.user.id;
+
     const [rows] = await pool.query(
       `SELECT
-         p.id, p.content, p.created_at,
-         u.id AS user_id, u.username,
+         p.id,
+         p.content,
+         p.created_at,
+         u.id AS user_id,
+         u.username,
          COUNT(DISTINCT l.id) AS likes_count,
          COUNT(DISTINCT v.id) AS views_count,
          COUNT(DISTINCT c.id) AS comments_count,
          MAX(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS liked,
+         EXISTS (
+           SELECT 1 FROM follows f
+           WHERE f.follower_id = ? AND f.followee_id = p.user_id
+         ) AS is_following_author,
          GROUP_CONCAT(DISTINCT h.tag) AS hashtags,
          GROUP_CONCAT(DISTINCT mu.username) AS mentions
        FROM posts p
@@ -102,7 +110,7 @@ router.get('/', auth, async (req, res) => {
        GROUP BY p.id, p.content, p.created_at, u.id, u.username
        ORDER BY p.created_at DESC
        LIMIT 50`,
-      [currentUserId]
+      [currentUserId, currentUserId, currentUserId, currentUserId]
     );
 
     // convert comma lists to arrays
@@ -112,13 +120,14 @@ router.get('/', auth, async (req, res) => {
       views_count: Number(r.views_count || 0),
       comments_count: Number(r.comments_count || 0),
       liked: Boolean(r.liked),
+      is_following_author: Boolean(r.is_following_author),
       hashtags: r.hashtags ? r.hashtags.split(',') : [],
       mentions: r.mentions ? r.mentions.split(',') : []
     }));
 
     res.json(transformed);
   } catch (err) {
-    console.error(err);
+    console.error('Feed error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
