@@ -39,7 +39,8 @@ router.get('/:userId/posts', auth, async (req, res) => {
             EXISTS(SELECT 1 FROM follows f WHERE f.follower_id = ? AND f.followee_id = p.user_id) AS is_following_author,
             EXISTS(SELECT 1 FROM likes l WHERE l.user_id = ? AND l.post_id = p.id) AS liked,
             (SELECT COUNT(*) FROM likes l2 WHERE l2.post_id = p.id) AS likes_count,
-            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count
+            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count,
+            (SELECT COUNT(*) FROM views v WHERE v.post_id = p.id) AS views_count
         FROM posts p
         JOIN users u ON u.id = p.user_id
         WHERE p.user_id = ?
