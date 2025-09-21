@@ -19,6 +19,9 @@ export default function useSocket(handlers = {}) {
     if (handlers.onPostUnliked) socketRef.current.on('post_unliked', handlers.onPostUnliked);
     if (handlers.onNewComment) socketRef.current.on('new_comment', handlers.onNewComment);
     if (handlers.onPostViewed) socketRef.current.on('post_viewed', handlers.onPostViewed);
+    if (handlers.onFollowUpdated)socketRef.current.on("follow_updated", handlers.onFollowUpdated);
+    if (handlers.onUserFollowed)socketRef.current.on('user_followed', handlers.onUserFollowed);
+    if (handlers.onUserUnfollowed)socketRef.current.on('user_unfollowed', handlers.onUserUnfollowed);
 
     return () => {
       socketRef.current?.disconnect();

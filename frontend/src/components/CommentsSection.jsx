@@ -1,8 +1,7 @@
-// src/components/CommentsSection.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api";
 
-export default function CommentsSection({ postId, currentUser }) {
+export default function CommentsSection({ postId, currentUser, onCommentAdded }) { // ✅ added onCommentAdded
   const [comments, setComments] = useState([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +27,6 @@ export default function CommentsSection({ postId, currentUser }) {
     e.preventDefault();
     if (!text || !text.trim()) return;
 
-    // optimistic
     const tempId = 't-' + Date.now();
     const temp = {
       id: tempId,
@@ -44,10 +42,16 @@ export default function CommentsSection({ postId, currentUser }) {
     try {
       const res = await api.post(`/posts/${postId}/comment`, { content: temp.content });
       const saved = res.data;
-      // replace temp with actual saved comment
+
+      // replace temp comment with actual saved comment
       setComments(prev => prev.map(c => (c.id === tempId ? saved : c)));
+
+      // ✅ notify PostItem/UserFeed to update comments_count
+      if (onCommentAdded) {
+        onCommentAdded(postId, saved);
+      }
+
     } catch (err) {
-      // remove temp and show error
       setComments(prev => prev.filter(c => c.id !== tempId));
       console.error('Failed to add comment', err);
       alert('Failed to add comment.');

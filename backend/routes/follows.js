@@ -78,41 +78,69 @@ router.get('/suggestions', auth, async (req, res) => {
   }
 });
 
-// Get followers of a user
-router.get('/:userId/followers', auth, async (req, res) => {
+// Follow a user
+router.post('/:userId', auth, async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
-    const [rows] = await pool.query(
-      `SELECT u.id, u.username, f.created_at
-       FROM follows f
-       JOIN users u ON f.follower_id = u.id
-       WHERE f.followee_id = ?
-       ORDER BY f.created_at DESC`,
-      [userId]
+    const followerId = Number(req.user.id);
+    const followeeId = Number(req.params.userId);
+    if (followerId === followeeId) return res.status(400).json({ error: 'Cannot follow yourself' });
+
+    await pool.query(
+      'INSERT IGNORE INTO follows (follower_id, followee_id) VALUES (?, ?)',
+      [followerId, followeeId]
     );
-    res.json(rows);
+
+    const [cnt] = await pool.query(
+      'SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = ?',
+      [followeeId]
+    );
+    const followers_count = cnt[0].followers_count;
+
+    // ✅ unified event
+    emit(req, 'follow_updated', { 
+      followeeId, 
+      followerId, 
+      isFollowing: true, 
+      followers_count 
+    });
+
+    res.json({ message: 'Followed', followers_count });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Could not load followers' });
+    console.error('Follow error', err);
+    res.status(500).json({ error: 'Server error while following' });
   }
 });
 
-// Get who a user is following
-router.get('/:userId/following', auth, async (req, res) => {
+// Unfollow a user
+router.delete('/:userId', auth, async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
-    const [rows] = await pool.query(
-      `SELECT u.id, u.username, f.created_at
-       FROM follows f
-       JOIN users u ON f.followee_id = u.id
-       WHERE f.follower_id = ?
-       ORDER BY f.created_at DESC`,
-      [userId]
+    const followerId = Number(req.user.id);
+    const followeeId = Number(req.params.userId);
+    if (followerId === followeeId) return res.status(400).json({ error: 'Cannot unfollow yourself' });
+
+    await pool.query(
+      'DELETE FROM follows WHERE follower_id = ? AND followee_id = ?',
+      [followerId, followeeId]
     );
-    res.json(rows);
+
+    const [cnt] = await pool.query(
+      'SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = ?',
+      [followeeId]
+    );
+    const followers_count = cnt[0].followers_count;
+
+    // ✅ unified event
+    emit(req, 'follow_updated', { 
+      followeeId, 
+      followerId, 
+      isFollowing: false, 
+      followers_count 
+    });
+
+    res.json({ message: 'Unfollowed', followers_count });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Could not load following list' });
+    console.error('Unfollow error', err);
+    res.status(500).json({ error: 'Server error while unfollowing' });
   }
 });
 

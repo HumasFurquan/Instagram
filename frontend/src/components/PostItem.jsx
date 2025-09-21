@@ -3,13 +3,12 @@ import React, { useEffect, useState } from "react";
 import api from "../api";
 import CommentsSection from "./CommentsSection";
 import { renderContentWithLinks } from "../utils/renderContent";
-import FollowButton from "./FollowButton"; // 👈 import the follow button
+import FollowButton from "./FollowButton";
 
-export default function PostItem({ post, user, authHeaders, toggleFollow }) {
+export default function PostItem({ post, user, authHeaders, toggleFollow, onNewComment }) {
   const [localPost, setLocalPost] = useState(post);
   const [showComments, setShowComments] = useState(false);
 
-  // Keep localPost synced with Feed updates
   useEffect(() => {
     setLocalPost(prev => ({
       ...prev,
@@ -20,8 +19,9 @@ export default function PostItem({ post, user, authHeaders, toggleFollow }) {
       username: post.username,
       created_at: post.created_at,
       liked: typeof prev.liked !== "undefined" ? prev.liked : !!post.liked,
-      is_following_author: post.is_following_author, // sync from Feed
+      is_following_author: post.is_following_author,
       user_id: post.user_id,
+      comments: post.comments || [],
     }));
   }, [
     post.id,
@@ -33,9 +33,9 @@ export default function PostItem({ post, user, authHeaders, toggleFollow }) {
     post.username,
     post.created_at,
     post.user_id,
+    post.comments,
   ]);
 
-  // Like toggle
   async function toggleLike() {
     if (!user) return alert("Please login to like posts.");
     const wasLiked = !!localPost.liked;
@@ -64,35 +64,46 @@ export default function PostItem({ post, user, authHeaders, toggleFollow }) {
     }
   }
 
+  // Called when CommentsSection successfully adds a comment
+  const handleCommentAdded = (newComment) => {
+    setLocalPost(prev => ({
+      ...prev,
+      comments_count: (prev.comments_count ?? 0) + 1,
+      comments: [newComment, ...(prev.comments || [])],
+    }));
+    if (onNewComment) {
+      onNewComment(localPost.id, newComment); // update UserFeed state
+    }
+  };
+
   return (
     <div style={{ border: "1px solid #ddd", padding: 8, marginBottom: 12 }}>
-      {/* Header: username + follow button */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <b>{localPost.username}</b>
           {user && user.id !== localPost.user_id && (
             <FollowButton
-              isFollowing={localPost.is_following_author}       // controlled state
-              onToggle={() => toggleFollow(localPost.user_id)}  // callback from Feed.jsx
+              isFollowing={localPost.is_following_author}
+              onToggle={() => {
+                toggleFollow(localPost.user_id, localPost.is_following_author);
+                setLocalPost(prev => ({
+                  ...prev,
+                  is_following_author: !prev.is_following_author
+                }));
+              }}
             />
           )}
           <small style={{ color: "#666" }}>
             {new Date(localPost.created_at).toLocaleString()}
           </small>
         </div>
-
-        {/* Views & Comments count */}
         <div style={{ textAlign: "right", fontSize: 13, color: "#333" }}>
           {localPost.views_count ?? 0} views · {localPost.comments_count ?? 0} comments
         </div>
       </div>
 
-      {/* Post content */}
-      <p style={{ whiteSpace: "pre-wrap" }}>
-        {renderContentWithLinks(localPost.content)}
-      </p>
+      <p style={{ whiteSpace: "pre-wrap" }}>{renderContentWithLinks(localPost.content)}</p>
 
-      {/* Actions: Like + Comment */}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button
           onClick={toggleLike}
@@ -107,9 +118,19 @@ export default function PostItem({ post, user, authHeaders, toggleFollow }) {
         </button>
       </div>
 
-      {/* Comments Section */}
       {showComments && (
-        <CommentsSection postId={localPost.id} currentUser={user} />
+        <CommentsSection
+          postId={localPost.id}
+          currentUser={user}
+          onCommentAdded={(postId, newComment) => {
+            // update local post comments count and list
+            setLocalPost(prev => ({
+              ...prev,
+              comments_count: (prev.comments_count || 0) + 1,
+              comments: [newComment, ...(prev.comments || [])]
+            }));
+          }}
+        />
       )}
     </div>
   );

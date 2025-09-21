@@ -128,6 +128,11 @@ export default function Feed() {
     async function toggleFollow(targetUserId) {
     if (!user || !token) return alert('Please login to follow users.');
 
+    if (!targetUserId || isNaN(targetUserId)) {
+      console.error("Invalid targetUserId for follow:", targetUserId);
+      return;
+    }
+
     // find current following state from first post of the user
     const isCurrentlyFollowing = posts.find(p => p.user_id === targetUserId)?.is_following_author;
 

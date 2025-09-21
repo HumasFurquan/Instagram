@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import postsRoutes from './routes/posts.js';
 import eventsRoutes from './routes/events.js';
 import followsRoutes from './routes/follows.js';
+import userRoutes from './routes/users.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -57,6 +58,7 @@ app.use('/auth', authRoutes);
 app.use('/posts', postsRoutes);
 app.use('/events', eventsRoutes);
 app.use('/follows', followsRoutes);
+app.use('/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
