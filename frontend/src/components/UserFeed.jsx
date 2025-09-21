@@ -11,63 +11,71 @@ export default function UserFeed({ user, authHeaders }) {
   const [loading, setLoading] = useState(true);
 
   // 🔴 socket handlers
-  useSocket({
+    useSocket({
     onPostLiked: ({ postId, likes_count }) => {
-      setPosts(prev =>
+        setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
-      );
+        );
     },
     onPostUnliked: ({ postId, likes_count }) => {
-      setPosts(prev =>
+        setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
-      );
+        );
     },
     onNewComment: ({ postId, comment }) => {
-      setPosts(prev =>
+        // normalize incoming comment
+        const normalizedComment = {
+        id: comment.id,
+        user_id: comment.user_id,
+        username: comment.username || comment.user?.username,
+        text: comment.text,
+        created_at: comment.created_at,
+        };
+
+        setPosts(prev =>
         prev.map(p =>
-          p.id === postId
+            p.id === postId
             ? {
                 ...p,
-                comments: [comment, ...(p.comments || [])],
+                comments: [normalizedComment, ...(p.comments || [])],
                 comments_count: (p.comments_count || 0) + 1,
-              }
+                }
             : p
         )
-      );
+        );
     },
     onNewPost: (newPost) => {
-      if (Number(newPost.user_id) === Number(userId)) {
+        if (Number(newPost.user_id) === Number(userId)) {
         setPosts(prev => [normalizePost(newPost), ...prev]);
-      }
+        }
     },
     onPostViewed: ({ postId, views_count }) => {
-      setPosts(prev =>
+        setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, views_count } : p))
-      );
+        );
     },
 
-    // ✅ follow/unfollow handlers (only for current logged-in user)
     onUserFollowed: ({ followerId, followeeId }) => {
-      if (Number(followerId) !== Number(user.id)) return; // ignore events from other users
-      setPosts(prev =>
+        if (Number(followerId) !== Number(user.id)) return;
+        setPosts(prev =>
         prev.map(p =>
-          p.user_id === followeeId
+            p.user_id === followeeId
             ? { ...p, is_following_author: true }
             : p
         )
-      );
+        );
     },
     onUserUnfollowed: ({ followerId, followeeId }) => {
-      if (Number(followerId) !== Number(user.id)) return; // ignore events from other users
-      setPosts(prev =>
+        if (Number(followerId) !== Number(user.id)) return;
+        setPosts(prev =>
         prev.map(p =>
-          p.user_id === followeeId
+            p.user_id === followeeId
             ? { ...p, is_following_author: false }
             : p
         )
-      );
+        );
     },
-  });
+    });
 
   // ---------------- Load posts ----------------
   useEffect(() => {

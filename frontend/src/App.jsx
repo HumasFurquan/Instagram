@@ -8,6 +8,7 @@ import Feed from './components/Feed';
 import CreatePost from './components/CreatePost';
 import UserFeed from './components/UserFeed';
 import SearchBar from './components/SearchBar';
+import Navbar from './components/Navbar';
 import api from './api';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
 
   const handleAuth = ({ token, user }) => {
+    console.log("✅ handleAuth called, setting user:", user);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     setToken(token); 
@@ -22,6 +24,7 @@ export default function App() {
   };
 
   const logout = () => {
+    console.log("✅ Logging out");
     localStorage.removeItem('token'); 
     localStorage.removeItem('user');
     setToken(null); 
@@ -30,29 +33,33 @@ export default function App() {
 
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
-  const toggleFollow = async (targetUserId, isCurrentlyFollowing) => {
-  if (!user || !token) return alert('Please login to follow users.');
-
-  try {
-    // Optimistic UI update (optional)
-    // update all posts from this user locally
-    // Example if using state in Feed/UserFeed
-
-    if (isCurrentlyFollowing) {
-      await api.delete(`/follows/${targetUserId}`, { headers: authHeaders() });
-    } else {
-      await api.post(`/follows/${targetUserId}`, {}, { headers: authHeaders() });
-    }
-  } catch (err) {
-    console.error('Failed to toggle follow', err);
-    alert('Could not update follow status.');
-  }
+  // Update user state and localStorage when profile picture changes
+  const updateUser = (newUser) => {
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
   };
 
+  const toggleFollow = async (targetUserId, isCurrentlyFollowing) => {
+    if (!user || !token) return alert('Please login to follow users.');
+    try {
+      if (isCurrentlyFollowing) {
+        await api.delete(`/follows/${targetUserId}`, { headers: authHeaders() });
+      } else {
+        await api.post(`/follows/${targetUserId}`, {}, { headers: authHeaders() });
+      }
+    } catch (err) {
+      console.error('❌ Failed to toggle follow', err);
+      alert('Could not update follow status.');
+    }
+  };
 
   return (
     <Router>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: 16 }}>
+      {/* Navbar fixed outside the scrollable content */}
+      {token && <Navbar user={user} authHeaders={authHeaders} onLogout={logout} onUpdateUser={updateUser} />}
+
+      {/* Main content shifted right by 100px to avoid overlap */}
+      <div style={{ marginLeft: token ? 100 : 0, maxWidth: 600, padding: 16 }}>
         <h1>Instagram-lite</h1>
 
         {!token ? (
@@ -63,10 +70,6 @@ export default function App() {
           </>
         ) : (
           <>
-            <div>
-              Welcome {user?.username} 
-              <button onClick={logout}>Logout</button>
-            </div>
             <SearchBar />
 
             <Routes>
@@ -86,6 +89,7 @@ export default function App() {
                     user={user} 
                     authHeaders={authHeaders} 
                     toggleFollow={toggleFollow} 
+                    onUpdateUser={updateUser}
                   />
                 }
               />

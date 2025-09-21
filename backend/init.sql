@@ -1,6 +1,10 @@
 CREATE DATABASE IF NOT EXISTS instagram_clone;
 USE instagram_clone;
 
+  -- while adding cloudinary i did this(below)
+-- ALTER TABLE users ADD COLUMN profile_picture_url VARCHAR(500) NULL
+-- ALTER TABLE users ADD COLUMN profile_picture_public_id VARCHAR(255);
+
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,  -- 👈 for @mentions & login
@@ -100,15 +104,4 @@ CREATE TABLE IF NOT EXISTS events (
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   INDEX idx_events_post (post_id),
   INDEX idx_events_user (user_id)
-);
-
-
--- I am dropping mentions table as it is created as duplicated (i only want post_mentions) ( i did DROP TABLE IF EXISTS mentions in mysql workbench)
--- Mentions (who was mentioned in a post)
-CREATE TABLE IF NOT EXISTS mentions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  post_id INT NOT NULL,
-  mentioned_user_id INT NOT NULL,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-  FOREIGN KEY (mentioned_user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -21,7 +21,8 @@ export default function PostItem({ post, user, authHeaders, toggleFollow, onNewC
       liked: typeof prev.liked !== "undefined" ? prev.liked : !!post.liked,
       is_following_author: post.is_following_author,
       user_id: post.user_id,
-      comments: post.comments || [],
+      // always take latest comments from parent
+      comments: post.comments ?? prev.comments ?? [],
     }));
   }, [
     post.id,
@@ -33,7 +34,7 @@ export default function PostItem({ post, user, authHeaders, toggleFollow, onNewC
     post.username,
     post.created_at,
     post.user_id,
-    post.comments,
+    post.comments, // watch comments from parent
   ]);
 
   async function toggleLike() {
