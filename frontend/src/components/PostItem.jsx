@@ -21,6 +21,7 @@ export default function PostItem({ post, user, authHeaders, toggleFollow, onNewC
       liked: typeof prev.liked !== "undefined" ? prev.liked : !!post.liked,
       is_following_author: post.is_following_author,
       user_id: post.user_id,
+      profile_picture_url: post.profile_picture_url ?? prev.profile_picture_url ?? null,
       // always take latest comments from parent
       comments: post.comments ?? prev.comments ?? [],
     }));
@@ -35,6 +36,7 @@ export default function PostItem({ post, user, authHeaders, toggleFollow, onNewC
     post.created_at,
     post.user_id,
     post.comments, // watch comments from parent
+    post.profile_picture_url
   ]);
 
   async function toggleLike() {
@@ -81,6 +83,12 @@ export default function PostItem({ post, user, authHeaders, toggleFollow, onNewC
     <div style={{ border: "1px solid #ddd", padding: 8, marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* ✅ Profile picture with fallback */}
+          <img
+            src={localPost.profile_picture_url || "/default-avatar.png"}
+            alt={localPost.username}
+            style={{ width: 32, height: 32, borderRadius: "50%" }}
+          />
           <b>{localPost.username}</b>
           {user && user.id !== localPost.user_id && (
             <FollowButton

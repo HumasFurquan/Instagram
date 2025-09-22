@@ -54,7 +54,7 @@ router.post('/', auth, async (req, res) => {
 
     // Fetch the full post back
     const [rows] = await pool.query(
-      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username
+      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username, u.profile_picture_url
        FROM posts p JOIN users u ON p.user_id = u.id
        WHERE p.id = ?`,
       [postId]
@@ -88,6 +88,7 @@ router.get('/', auth, async (req, res) => {
          p.created_at,
          u.id AS user_id,
          u.username,
+         u.profile_picture_url,
          COUNT(DISTINCT l.id) AS likes_count,
          COUNT(DISTINCT v.id) AS views_count,
          COUNT(DISTINCT c.id) AS comments_count,
@@ -107,7 +108,7 @@ router.get('/', auth, async (req, res) => {
        LEFT JOIN hashtags h ON ph.hashtag_id = h.id
        LEFT JOIN post_mentions pm ON pm.post_id = p.id
        LEFT JOIN users mu ON pm.mentioned_user_id = mu.id
-       GROUP BY p.id, p.content, p.created_at, u.id, u.username
+       GROUP BY p.id, p.content, p.created_at, u.id, u.username, u.profile_picture_url
        ORDER BY p.created_at DESC
        LIMIT 50`,
       [currentUserId, currentUserId, currentUserId, currentUserId]
@@ -222,7 +223,7 @@ router.get('/:id/comments', auth, async (req, res) => {
   try {
     const postId = req.params.id;
     const [rows] = await pool.query(
-      `SELECT c.id, c.content, c.created_at, u.id AS user_id, u.username
+      `SELECT c.id, c.content, c.created_at, u.id AS user_id, u.username, u.profile_picture_url
        FROM comments c
        JOIN users u ON c.user_id = u.id
        WHERE c.post_id = ?
@@ -241,7 +242,7 @@ router.get('/hashtag/:tag/posts', auth, async (req, res) => {
   const tag = req.params.tag;
   try {
     const [rows] = await pool.query(
-      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username
+      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username, u.profile_picture_url
        FROM posts p
        JOIN post_hashtags ph ON ph.post_id = p.id
        JOIN hashtags h ON h.id = ph.hashtag_id

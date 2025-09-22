@@ -77,6 +77,7 @@ export default function Feed() {
       liked: !!p.liked,
       comments: p.comments || [],
       user_id: p.user_id,
+      profile_picture_url: p.profile_picture_url || null,
       is_following_author: p.is_following_author ?? false
     };
   }

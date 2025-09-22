@@ -9,114 +9,114 @@ export default function UserFeed({ user, authHeaders }) {
   const { userId } = useParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
 
-  // 🔴 socket handlers
-    useSocket({
-    onPostLiked: ({ postId, likes_count }) => {
-        setPosts(prev =>
+  // ---------------- Socket handlers ----------------
+  useSocket({
+    onPostLiked: ({ postId, likes_count }) =>
+      setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
-        );
-    },
-    onPostUnliked: ({ postId, likes_count }) => {
-        setPosts(prev =>
+      ),
+    onPostUnliked: ({ postId, likes_count }) =>
+      setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
-        );
-    },
+      ),
     onNewComment: ({ postId, comment }) => {
-        // normalize incoming comment
-        const normalizedComment = {
+      const normalizedComment = {
         id: comment.id,
         user_id: comment.user_id,
         username: comment.username || comment.user?.username,
         text: comment.text,
         created_at: comment.created_at,
-        };
-
-        setPosts(prev =>
+      };
+      setPosts(prev =>
         prev.map(p =>
-            p.id === postId
+          p.id === postId
             ? {
                 ...p,
                 comments: [normalizedComment, ...(p.comments || [])],
                 comments_count: (p.comments_count || 0) + 1,
-                }
+              }
             : p
         )
-        );
+      );
     },
-    onNewPost: (newPost) => {
-        if (Number(newPost.user_id) === Number(userId)) {
-        setPosts(prev => [normalizePost(newPost), ...prev]);
-        }
+    onNewPost: newPost => {
+      if (Number(newPost.user_id) === Number(userId)) {
+        setPosts(prev => [normalizePost(newPost, userProfile), ...prev]);
+      }
     },
-    onPostViewed: ({ postId, views_count }) => {
-        setPosts(prev =>
+    onPostViewed: ({ postId, views_count }) =>
+      setPosts(prev =>
         prev.map(p => (p.id === postId ? { ...p, views_count } : p))
-        );
-    },
-
+      ),
     onUserFollowed: ({ followerId, followeeId }) => {
-        if (Number(followerId) !== Number(user.id)) return;
-        setPosts(prev =>
+      if (Number(followerId) !== Number(user.id)) return;
+      setPosts(prev =>
         prev.map(p =>
-            p.user_id === followeeId
+          p.user_id === followeeId
             ? { ...p, is_following_author: true }
             : p
         )
-        );
+      );
     },
     onUserUnfollowed: ({ followerId, followeeId }) => {
-        if (Number(followerId) !== Number(user.id)) return;
-        setPosts(prev =>
+      if (Number(followerId) !== Number(user.id)) return;
+      setPosts(prev =>
         prev.map(p =>
-            p.user_id === followeeId
+          p.user_id === followeeId
             ? { ...p, is_following_author: false }
             : p
         )
-        );
+      );
     },
-    });
+  });
 
-  // ---------------- Load posts ----------------
+  // ---------------- Load user profile and posts ----------------
   useEffect(() => {
-    async function fetchPosts() {
+    async function fetchUserAndPosts() {
       try {
-        const res = await api.get(`/users/${userId}/posts`, {
-          headers: authHeaders(),
-        });
-        const serverPosts = (res.data || []).map(normalizePost);
+        // 1️⃣ Fetch user profile
+        const userRes = await api.get(`/users/${userId}`, { headers: authHeaders() });
+        setUserProfile(userRes.data);
+
+        // 2️⃣ Fetch user's posts
+        const postsRes = await api.get(`/users/${userId}/posts`, { headers: authHeaders() });
+        const serverPosts = (postsRes.data || []).map(p =>
+          normalizePost(p, userRes.data)
+        );
         setPosts(serverPosts);
       } catch (err) {
-        console.error('Failed to fetch user posts', err);
+        console.error('Failed to fetch user or posts', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchPosts();
+    fetchUserAndPosts();
   }, [userId, authHeaders]);
 
   // ---------------- Normalize post ----------------
-  function normalizePost(p) {
+  function normalizePost(post, fallbackUserProfile) {
     return {
-      ...p,
-      likes_count: p.likes_count ?? 0,
-      views_count: p.views_count ?? 0,
-      comments_count: p.comments_count ?? 0,
-      liked: !!p.liked,
-      comments: p.comments || [],
-      user_id: p.user_id,
-      is_following_author: p.is_following_author ?? false,
+      ...post,
+      likes_count: post.likes_count ?? 0,
+      views_count: post.views_count ?? 0,
+      comments_count: post.comments_count ?? 0,
+      liked: !!post.liked,
+      comments: post.comments || [],
+      user_id: post.user_id,
+      is_following_author: post.is_following_author ?? false,
+      profile_picture_url:
+        post.profile_picture_url ??          // direct field in post
+        post.user?.profile_picture_url ??    // user object inside post
+        fallbackUserProfile?.profile_picture_url ?? // fallback
+        null,
     };
   }
 
   // ---------------- Follow toggle ----------------
   async function toggleFollow(targetUserId) {
     if (!user) return alert('Please login to follow users.');
-
-    if (!targetUserId || isNaN(targetUserId)) {
-      console.error('Invalid targetUserId for follow:', targetUserId);
-      return;
-    }
 
     const isCurrentlyFollowing = posts.find(p => p.user_id === targetUserId)?.is_following_author;
 

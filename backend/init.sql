@@ -1,16 +1,14 @@
 CREATE DATABASE IF NOT EXISTS instagram_clone;
 USE instagram_clone;
 
-  -- while adding cloudinary i did this(below)
--- ALTER TABLE users ADD COLUMN profile_picture_url VARCHAR(500) NULL
--- ALTER TABLE users ADD COLUMN profile_picture_public_id VARCHAR(255);
-
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) NOT NULL UNIQUE,  -- 👈 for @mentions & login
-  full_name VARCHAR(100),                -- 👈 optional display name (can have spaces)
+  username VARCHAR(50) NOT NULL UNIQUE,      -- 👈 for @mentions & login
+  full_name VARCHAR(100),                    -- 👈 optional display name
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  profile_picture_url VARCHAR(500) NULL,     -- 👈 URL of Cloudinary image
+  profile_picture_public_id VARCHAR(255),    -- 👈 Cloudinary public_id (for delete/replace)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
