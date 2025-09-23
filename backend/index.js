@@ -1,9 +1,9 @@
-// backend/index.js
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
+import jwt from 'jsonwebtoken';
+import pool from './config/db.js'; // import your DB connection
 import { Server } from 'socket.io';
 dotenv.config();
 
@@ -12,20 +12,21 @@ import postsRoutes from './routes/posts.js';
 import eventsRoutes from './routes/events.js';
 import followsRoutes from './routes/follows.js';
 import userRoutes from './routes/users.js';
+import friendsRoutes from './routes/friends.js';
 
 const app = express();
 const httpServer = http.createServer(app);
 
 const allowedOrigins = [
-  'http://localhost:5173',          // your vite dev
-  'http://localhost:3000',          // other local dev ports if used
-  'https://frozenapple.vercel.app', // your deployed frontend (example)
-  'https://frozenapple.netlify.app' // another if used
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://frozenapple.vercel.app',
+  'https://frozenapple.netlify.app'
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow non-browser requests
+    if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       return callback(new Error(`CORS not allowed for ${origin}`), false);
     }
@@ -37,7 +38,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// create socket.io with CORS
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
@@ -49,16 +49,84 @@ const io = new Server(httpServer, {
 // attach io to app so routes can emit: req.app.get('io')
 app.set('io', io);
 
-io.on('connection', socket => {
-  console.log('socket connected', socket.id);
-  socket.on('disconnect', () => console.log('socket disconnected', socket.id));
+// ------------------- Socket authentication & rooms -------------------
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error('Authentication error: No token'));
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = payload.id; // store userId on socket
+    next();
+  } catch (err) {
+    console.log('Socket auth error', err);
+    next(new Error('Authentication error: Invalid token'));
+  }
 });
 
+io.on('connection', socket => {
+  const userId = socket.userId;
+  console.log(`User ${userId} connected via socket ${socket.id}`);
+
+  // Join personal room
+  socket.join(`user_${userId}`);
+
+  // ----------------- Likes -----------------
+  socket.on('likePost', async ({ postId }) => {
+    try {
+      // Insert like
+      await pool.query('INSERT IGNORE INTO likes (user_id, post_id) VALUES (?, ?)', [userId, postId]);
+
+      // Get updated likes count and post owner
+      const [rows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+      if (!rows[0]) return;
+      const postOwnerId = rows[0].user_id;
+
+      const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+      const likes_count = cntRows[0].likes_count;
+
+      // Notify post owner and self
+      io.to(`user_${postOwnerId}`).emit('postLiked', { postId, userId, likes_count });
+      io.to(`user_${userId}`).emit('postLiked', { postId, userId, likes_count });
+
+    } catch (err) {
+      console.error('Error liking post:', err);
+    }
+  });
+
+  socket.on('unlikePost', async ({ postId }) => {
+    try {
+      await pool.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
+
+      // Get updated likes count and post owner
+      const [rows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+      if (!rows[0]) return;
+      const postOwnerId = rows[0].user_id;
+
+      const [cntRows] = await pool.query('SELECT COUNT(*) AS likes_count FROM likes WHERE post_id = ?', [postId]);
+      const likes_count = cntRows[0].likes_count;
+
+      io.to(`user_${postOwnerId}`).emit('postUnliked', { postId, userId, likes_count });
+      io.to(`user_${userId}`).emit('postUnliked', { postId, userId, likes_count });
+
+    } catch (err) {
+      console.error('Error unliking post:', err);
+    }
+  });
+
+  // ----------------- Disconnect -----------------
+  socket.on('disconnect', () => {
+    console.log(`User ${userId} disconnected from socket ${socket.id}`);
+  });
+});
+
+// ------------------- Routes -------------------
 app.use('/auth', authRoutes);
 app.use('/posts', postsRoutes);
 app.use('/events', eventsRoutes);
 app.use('/follows', followsRoutes);
 app.use('/users', userRoutes);
+app.use('/friends', friendsRoutes);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

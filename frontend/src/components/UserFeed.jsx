@@ -13,13 +13,21 @@ export default function UserFeed({ user, authHeaders }) {
 
   // ---------------- Socket handlers ----------------
   useSocket({
-    onPostLiked: ({ postId, likes_count }) =>
+    onPostLiked: ({ postId, likes_count, userId: actorId }) =>
       setPosts(prev =>
-        prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, likes_count, liked: actorId === user?.id ? true : p.liked }
+            : p
+        )
       ),
-    onPostUnliked: ({ postId, likes_count }) =>
+    onPostUnliked: ({ postId, likes_count, userId: actorId }) =>
       setPosts(prev =>
-        prev.map(p => (p.id === postId ? { ...p, likes_count } : p))
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, likes_count, liked: actorId === user?.id ? false : p.liked }
+            : p
+        )
       ),
     onNewComment: ({ postId, comment }) => {
       const normalizedComment = {
@@ -42,8 +50,12 @@ export default function UserFeed({ user, authHeaders }) {
       );
     },
     onNewPost: newPost => {
+      // Only add post if it's from this user's feed
       if (Number(newPost.user_id) === Number(userId)) {
-        setPosts(prev => [normalizePost(newPost, userProfile), ...prev]);
+        const normalized = normalizePost(newPost, userProfile);
+        // ✅ Inject follow status based on your current friends/following list
+        normalized.is_following_author = friendsList?.includes(normalized.user_id);
+        setPosts(prev => [normalized, ...prev]);
       }
     },
     onPostViewed: ({ postId, views_count }) =>
@@ -71,6 +83,8 @@ export default function UserFeed({ user, authHeaders }) {
       );
     },
   });
+
+
 
   // ---------------- Load user profile and posts ----------------
   useEffect(() => {

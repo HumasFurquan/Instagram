@@ -2,10 +2,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../api';
 import useSocket from '../hooks/useSocket';
-import PostItem from './PostItem'; // ✅ import PostItem
+import PostItem from './PostItem';
 
 export default function Feed() {
   const [posts, setPosts] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [friendsList, setFriendsList] = useState([]); // track friends
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem('token');
@@ -13,58 +15,87 @@ export default function Feed() {
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
   const viewedRef = useRef(new Set());
-  const viewStartMap = useRef(new Map());
   const observerRef = useRef(null);
 
   // ---------------- Socket handlers ----------------
-  useSocket({
-    onNewPost: (newPost) => setPosts(prev => [normalizePost(newPost), ...prev]),
-
-    onPostLiked: ({ postId, likes_count }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
-
-    onPostUnliked: ({ postId, likes_count }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count } : p)),
-
+  const socket = useSocket({
+    onNewPost: (newPost) => {
+    const normalized = normalizePost(newPost);
+    normalized.is_following_author = friendsList.includes(normalized.user_id);
+    setPosts(prev => [normalized, ...prev]);
+  },
+    onPostLiked: ({ postId, likes_count, userId: actorId }) =>
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, likes_count, liked: actorId === user?.id ? true : p.liked }
+            : p
+        )
+      ),
+    onPostUnliked: ({ postId, likes_count, userId: actorId }) =>
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, likes_count, liked: actorId === user?.id ? false : p.liked }
+            : p
+        )
+      ),
     onNewComment: ({ postId, comment }) => {
-      setPosts(prev => prev.map(p => {
-        if (p.id !== postId) return p;
-
-        // prepend new comment to the existing array
-        const updatedComments = [comment, ...(p.comments || [])];
-
-        return {
-          ...p,
-          comments: updatedComments,
-          comments_count: (p.comments_count || 0) + 1  // increment by 1
-        };
-      }));
+      setPosts(prev =>
+        prev.map(p => {
+          if (p.id !== postId) return p;
+          const updatedComments = [comment, ...(p.comments || [])];
+          return { ...p, comments: updatedComments, comments_count: (p.comments_count || 0) + 1 };
+        })
+      );
     },
-
     onPostViewed: ({ postId, views_count }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p))
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p)),
+    onFriendAccepted: ({ userId }) => {
+      setFriendsList(prev => [...prev, userId]);
+    }
   });
 
-  // ---------------- Load posts ----------------
+  // ---------------- Load posts, friends & pending requests ----------------
   useEffect(() => {
     loadPosts();
-    return () => {
-      if (observerRef.current) observerRef.current.disconnect();
-      flushAllOngoingViews();
-    };
+    loadPendingFriendRequests();
+    loadFriendsList();
+    return () => observerRef.current?.disconnect();
   }, []);
 
   async function loadPosts() {
     try {
       setLoading(true);
       const res = await api.get('/posts', { headers: authHeaders() });
-      const serverPosts = (res.data || []).map(normalizePost);
-      setPosts(serverPosts);
+      setPosts((res.data || []).map(normalizePost));
       setupObserver();
     } catch (err) {
       console.error('Failed to load posts', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPendingFriendRequests() {
+    if (!user) return;
+    try {
+      const res = await api.get('/friends/requests', { headers: authHeaders() });
+      const pendingSenderIds = res.data.map(r => r.sender_id);
+      setPendingRequests(pendingSenderIds);
+    } catch (err) {
+      console.error('Failed to load pending friend requests', err);
+    }
+  }
+
+  async function loadFriendsList() {
+    if (!user) return;
+    try {
+      const res = await api.get('/friends', { headers: authHeaders() });
+      const friendIds = res.data.map(f => f.id);
+      setFriendsList(friendIds);
+    } catch (err) {
+      console.error('Failed to load friends list', err);
     }
   }
 
@@ -84,14 +115,14 @@ export default function Feed() {
 
   // ---------------- IntersectionObserver ----------------
   function setupObserver() {
-    if (observerRef.current) observerRef.current.disconnect();
+    observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        const postId = entry.target.dataset.postId;
+        const postId = Number(entry.target.dataset.postId);
         if (!postId) return;
         if (entry.isIntersecting && !viewedRef.current.has(postId)) {
           viewedRef.current.add(postId);
-          setPosts(prev => prev.map(p => p.id === Number(postId) ? { ...p, views_count: (p.views_count || 0) + 1 } : p));
+          setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count: (p.views_count || 0) + 1 } : p));
           recordView(postId);
         }
       });
@@ -102,42 +133,17 @@ export default function Feed() {
     }, 60);
   }
 
-  function flushAllOngoingViews() {
-    for (const [postId, startTs] of viewStartMap.current.entries()) {
-      const durationSec = (Date.now() - startTs) / 1000;
-      if (durationSec > 0) sendEvent('view', postId, { duration: durationSec }).catch(() => {});
-    }
-    viewStartMap.current.clear();
-  }
-
   async function recordView(postId) {
     if (!user || !token) return;
     try {
       await api.post(`/posts/${postId}/view`, {}, { headers: authHeaders() });
-    } catch (err) { }
+    } catch (err) {}
   }
 
-  async function sendEvent(eventType, postId, value = {}) {
-    if (!user || !token) return;
-    try {
-      await api.post('/events', { postId, event_type: eventType, value }, { headers: authHeaders() });
-    } catch (err) {
-      console.error('Failed to send event', eventType, postId, err);
-    }
-  }
-
-    async function toggleFollow(targetUserId) {
+  async function toggleFollow(targetUserId) {
     if (!user || !token) return alert('Please login to follow users.');
-
-    if (!targetUserId || isNaN(targetUserId)) {
-      console.error("Invalid targetUserId for follow:", targetUserId);
-      return;
-    }
-
-    // find current following state from first post of the user
     const isCurrentlyFollowing = posts.find(p => p.user_id === targetUserId)?.is_following_author;
 
-    // optimistic update: update all posts from that user
     setPosts(prev =>
       prev.map(p =>
         p.user_id === targetUserId
@@ -153,7 +159,6 @@ export default function Feed() {
         await api.delete(`/follows/${targetUserId}`, { headers: authHeaders() });
       }
     } catch (err) {
-      // rollback in case of error
       setPosts(prev =>
         prev.map(p =>
           p.user_id === targetUserId
@@ -172,7 +177,14 @@ export default function Feed() {
       {posts.length === 0 && !loading && <div>No posts yet.</div>}
       {posts.map(p => (
         <div key={p.id} data-post-id={p.id}>
-          <PostItem post={p} user={user} authHeaders={authHeaders} toggleFollow={toggleFollow} />
+          <PostItem
+            post={p}
+            user={user}
+            authHeaders={authHeaders}
+            toggleFollow={toggleFollow}
+            pendingRequests={pendingRequests}
+            friendsList={friendsList} // ✅ pass friends list to PostItem
+          />
         </div>
       ))}
     </div>

@@ -103,3 +103,25 @@ CREATE TABLE IF NOT EXISTS events (
   INDEX idx_events_post (post_id),
   INDEX idx_events_user (user_id)
 );
+
+-- 1️⃣ Create friend_requests table safely
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  status ENUM('pending','accepted','declined') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_friend_request (sender_id, receiver_id),
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 2️⃣ Create friends view (drop first if exists, then create)
+DROP VIEW IF EXISTS friends;
+
+CREATE VIEW friends AS
+SELECT 
+  CASE WHEN sender_id < receiver_id THEN sender_id ELSE receiver_id END AS user1,
+  CASE WHEN sender_id > receiver_id THEN sender_id ELSE receiver_id END AS user2
+FROM friend_requests
+WHERE status = 'accepted';
