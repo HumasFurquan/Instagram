@@ -11,6 +11,11 @@ export default function UserFeed({ user, authHeaders }) {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
 
+  // ---------------- State for friends ----------------
+  const [friendsList, setFriendsList] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]); // requests received
+  const [sentRequests, setSentRequests] = useState([]);       // requests sent
+
   // ---------------- Socket handlers ----------------
   useSocket({
     onPostLiked: ({ postId, likes_count, userId: actorId }) =>
@@ -50,10 +55,8 @@ export default function UserFeed({ user, authHeaders }) {
       );
     },
     onNewPost: newPost => {
-      // Only add post if it's from this user's feed
       if (Number(newPost.user_id) === Number(userId)) {
         const normalized = normalizePost(newPost, userProfile);
-        // ✅ Inject follow status based on your current friends/following list
         normalized.is_following_author = friendsList?.includes(normalized.user_id);
         setPosts(prev => [normalized, ...prev]);
       }
@@ -84,9 +87,7 @@ export default function UserFeed({ user, authHeaders }) {
     },
   });
 
-
-
-  // ---------------- Load user profile and posts ----------------
+  // ---------------- Load user profile, posts, and friends ----------------
   useEffect(() => {
     async function fetchUserAndPosts() {
       try {
@@ -100,8 +101,17 @@ export default function UserFeed({ user, authHeaders }) {
           normalizePost(p, userRes.data)
         );
         setPosts(serverPosts);
+
+        // 3️⃣ Fetch my friends, pending requests, and sent requests
+        const friendsRes = await api.get(`/friends`, { headers: authHeaders() });
+        const pendingRes = await api.get(`/friends/requests`, { headers: authHeaders() });
+        const sentRes = await api.get(`/friends/sent`, { headers: authHeaders() });
+
+        setFriendsList(friendsRes.data.map(f => f.id));
+        setPendingRequests(pendingRes.data.map(r => r.sender_id)); // requests received
+        setSentRequests(sentRes.data.map(r => r.receiver_id));     // requests sent
       } catch (err) {
-        console.error('Failed to fetch user or posts', err);
+        console.error('Failed to fetch user, posts, or friends', err);
       } finally {
         setLoading(false);
       }
@@ -121,9 +131,9 @@ export default function UserFeed({ user, authHeaders }) {
       user_id: post.user_id,
       is_following_author: post.is_following_author ?? false,
       profile_picture_url:
-        post.profile_picture_url ??          // direct field in post
-        post.user?.profile_picture_url ??    // user object inside post
-        fallbackUserProfile?.profile_picture_url ?? // fallback
+        post.profile_picture_url ??
+        post.user?.profile_picture_url ??
+        fallbackUserProfile?.profile_picture_url ??
         null,
     };
   }
@@ -134,7 +144,6 @@ export default function UserFeed({ user, authHeaders }) {
 
     const isCurrentlyFollowing = posts.find(p => p.user_id === targetUserId)?.is_following_author;
 
-    // optimistic update
     setPosts(prev =>
       prev.map(p =>
         p.user_id === targetUserId
@@ -150,7 +159,6 @@ export default function UserFeed({ user, authHeaders }) {
         await api.delete(`/follows/${targetUserId}`, { headers: authHeaders() });
       }
     } catch (err) {
-      // rollback
       setPosts(prev =>
         prev.map(p =>
           p.user_id === targetUserId
@@ -174,6 +182,9 @@ export default function UserFeed({ user, authHeaders }) {
           user={user}
           authHeaders={authHeaders}
           toggleFollow={toggleFollow}
+          friendsList={friendsList}          
+          pendingRequests={pendingRequests}  
+          sentRequests={sentRequests}       // ✅ pass sent requests
         />
       ))}
     </div>

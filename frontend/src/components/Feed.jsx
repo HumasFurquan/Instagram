@@ -8,6 +8,7 @@ export default function Feed() {
   const [posts, setPosts] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [friendsList, setFriendsList] = useState([]); // track friends
+  const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem('token');
@@ -20,10 +21,10 @@ export default function Feed() {
   // ---------------- Socket handlers ----------------
   const socket = useSocket({
     onNewPost: (newPost) => {
-    const normalized = normalizePost(newPost);
-    normalized.is_following_author = friendsList.includes(normalized.user_id);
-    setPosts(prev => [normalized, ...prev]);
-  },
+      const normalized = normalizePost(newPost);
+      normalized.is_following_author = friendsList.includes(normalized.user_id);
+      setPosts(prev => [normalized, ...prev]);
+    },
     onPostLiked: ({ postId, likes_count, userId: actorId }) =>
       setPosts(prev =>
         prev.map(p =>
@@ -53,6 +54,10 @@ export default function Feed() {
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p)),
     onFriendAccepted: ({ userId }) => {
       setFriendsList(prev => [...prev, userId]);
+    },
+    onFriendRemoved: ({ userId: removedFriendId }) => {
+      // remove friend from friendsList
+      setFriendsList(prev => prev.filter(id => id !== removedFriendId));
     }
   });
 
@@ -61,6 +66,7 @@ export default function Feed() {
     loadPosts();
     loadPendingFriendRequests();
     loadFriendsList();
+    loadSentRequests();
     return () => observerRef.current?.disconnect();
   }, []);
 
@@ -74,6 +80,17 @@ export default function Feed() {
       console.error('Failed to load posts', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSentRequests() {
+    if (!user) return;
+    try {
+      const res = await api.get('/friends/sent', { headers: authHeaders() });
+      const sentIds = res.data.map(r => r.id); // receivers of your requests
+      setSentRequests(sentIds);
+    } catch (err) {
+      console.error('Failed to load sent requests', err);
     }
   }
 
@@ -184,6 +201,12 @@ export default function Feed() {
             toggleFollow={toggleFollow}
             pendingRequests={pendingRequests}
             friendsList={friendsList} // ✅ pass friends list to PostItem
+            sentRequests={sentRequests}
+            onSentRequest={(id) => setSentRequests(prev => [...prev, id])} // optional callback
+            onUnfriend={(friendId) => {
+              // 🔑 instantly update friends list when unfriended
+              setFriendsList(prev => prev.filter(id => id !== friendId));
+            }}
           />
         </div>
       ))}

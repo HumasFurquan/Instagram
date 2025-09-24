@@ -62,22 +62,22 @@ router.post("/accept/:requestId", auth, async (req, res) => {
   }
 });
 
-// ---------------- Decline friend request ----------------
+// ---------------- Decline friend request (delete row) ----------------
 router.post("/decline/:requestId", auth, async (req, res) => {
   const userId = req.user.id;
   const requestId = Number(req.params.requestId);
 
   try {
     const [result] = await pool.query(
-      "UPDATE friend_requests SET status='declined' WHERE id=? AND receiver_id=?",
+      "DELETE FROM friend_requests WHERE id=? AND receiver_id=?",
       [requestId, userId]
     );
 
     if (result.affectedRows === 0) return res.status(404).json({ message: "Request not found" });
 
-    res.json({ message: "Friend request declined" });
+    res.json({ message: "Friend request declined (deleted)" });
   } catch (err) {
-    console.error(err);
+    console.error("Decline friend request error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -91,6 +91,24 @@ router.get("/requests", auth, async (req, res) => {
        FROM friend_requests fr
        JOIN users u ON fr.sender_id = u.id
        WHERE fr.receiver_id=? AND fr.status='pending'`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ---------------- List requests sent by current user ----------------
+router.get("/sent", auth, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const [rows] = await pool.query(
+      `SELECT fr.id, fr.receiver_id AS id, u.username, u.profile_picture_url
+       FROM friend_requests fr
+       JOIN users u ON fr.receiver_id = u.id
+       WHERE fr.sender_id=? AND fr.status='pending'`,
       [userId]
     );
     res.json(rows);
@@ -135,7 +153,6 @@ router.delete("/:friendId", auth, async (req, res) => {
       return res.status(404).json({ message: "Friend not found" });
     }
 
-    // Emit a socket event if needed
     emit(req, "friendRemoved", { userId, friendId });
 
     res.json({ message: "Friend removed successfully" });

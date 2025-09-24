@@ -12,8 +12,11 @@ export default function PostItem({
   authHeaders, 
   toggleFollow, 
   pendingRequests = [], 
+  sentRequests = [],
   friendsList = [], 
-  onNewComment 
+  onNewComment,
+  onUnfriend,
+  onSentRequest 
 }) {
   const [localPost, setLocalPost] = useState(post);
   const [showComments, setShowComments] = useState(false);
@@ -64,9 +67,27 @@ export default function PostItem({
   // Update friendStatus whenever friendsList or pendingRequests change
   useEffect(() => {
     if (friendsList.includes(post.user_id)) setFriendStatus("friends");
-    else if (pendingRequests.includes(post.user_id)) setFriendStatus("pending");
+    else if (pendingRequests.includes(post.user_id)) setFriendStatus("pending"); // they sent request to you
+    else if (sentRequests?.includes(post.user_id)) setFriendStatus("sent"); // you sent request to them
     else setFriendStatus("none");
-  }, [post.user_id, pendingRequests, friendsList]);
+  }, [post.user_id, pendingRequests, sentRequests, friendsList]);
+
+  // ✅ listen for unfriend via socket safely
+  useEffect(() => {
+    if (!socket) return;  // 👈 prevent crash if socket is null
+
+    const handleFriendRemoved = ({ userId: removedFriendId }) => {
+      if (removedFriendId === post.user_id) {
+        setFriendStatus("none");
+        if (onUnfriend) onUnfriend(removedFriendId);
+      }
+    };
+
+    socket.on("friendRemoved", handleFriendRemoved);
+    return () => {
+      socket.off("friendRemoved", handleFriendRemoved);
+    };
+  }, [post.user_id, socket, onUnfriend]);
 
   // Keep localPost in sync with parent post prop
   useEffect(() => {
@@ -93,11 +114,10 @@ export default function PostItem({
     try {
       if (!wasLiked) {
         await api.post(`/posts/${localPost.id}/like`, {}, { headers: authHeaders() });
-        // Emit socket event for backend to notify others
-        socket.emit("likePost", { postId: localPost.id });
+        socket?.emit("likePost", { postId: localPost.id }); // 👈 safe emit
       } else {
         await api.delete(`/posts/${localPost.id}/like`, { headers: authHeaders() });
-        socket.emit("unlikePost", { postId: localPost.id });
+        socket?.emit("unlikePost", { postId: localPost.id }); // 👈 safe emit
       }
     } catch (err) {
       // rollback on error
@@ -121,11 +141,22 @@ export default function PostItem({
 
   const handleAddFriend = async () => {
     if (!user || friendStatus !== "none") return;
+
+    const targetUserId = localPost.user_id;
+
     try {
-      await api.post(`/friends/request/${localPost.user_id}`, {}, { headers: authHeaders() });
-      setFriendStatus("pending");
+      setFriendStatus("sent"); // show immediately
+      if (onSentRequest) onSentRequest(targetUserId); // tell parent Feed to update sentRequests
+      const res = await api.post(
+        `/friends/request/${targetUserId}`,
+        {},
+        { headers: authHeaders() }
+      );
+      console.log("Friend request response:", res.data);
     } catch (err) {
-      console.error(err.response?.data?.message || "Error sending friend request");
+      console.error("Full error response:", err.response?.data || err);
+      setFriendStatus("none"); // rollback if API fails
+      alert("Failed to send friend request. Check console for details.");
     }
   };
 
@@ -162,7 +193,9 @@ export default function PostItem({
               >
                 {friendStatus === "friends" 
                   ? "Friends" 
-                  : friendStatus === "pending" 
+                  : friendStatus === "pending"
+                  ? "Request Received"
+                  : friendStatus === "sent"
                   ? "Request Sent" 
                   : "Add Friend"}
               </button>

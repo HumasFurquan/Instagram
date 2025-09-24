@@ -37,13 +37,15 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
     if (!socket || !user) return;
 
     const handleNewRequest = (request) => {
-      if (request.receiver_id === user.id) setFriendRequests(prev => [request, ...prev]);
+      if (request.receiver_id === user.id) {
+        setFriendRequests((prev) => [request, ...prev]);
+      }
     };
 
     const handleRequestUpdate = (updated) => {
-      setFriendRequests(prev => prev.filter(r => r.id !== updated.id));
+      setFriendRequests((prev) => prev.filter((r) => r.id !== updated.id));
       if (updated.status === "accepted") {
-        setFriends(prev => [
+        setFriends((prev) => [
           ...prev,
           updated.sender_id === user.id ? updated.receiver : updated.sender,
         ]);
@@ -61,8 +63,37 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
 
   // Handle unfriend: remove friend instantly from state
   const handleUnfriend = (friendId) => {
-    setFriends(prev => prev.filter(f => f.id !== friendId));
+    setFriends((prev) => prev.filter((f) => f.id !== friendId));
   };
+
+// Handle accepting friend request
+  const handleAccept = async (requestId) => {
+    try {
+      await api.post(`/friends/accept/${requestId}`, {}, { headers: authHeaders() });
+
+      // Remove from requests list
+      setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+
+      // Optionally: add to friends (if backend returns friend info, better to re-fetch friends)
+      const acceptedRequest = friendRequests.find(r => r.id === requestId);
+      if (acceptedRequest) {
+        setFriends(prev => [...prev, { id: acceptedRequest.sender_id, username: acceptedRequest.username }]);
+      }
+    } catch (err) {
+      console.error("Error accepting friend request", err);
+    }
+  };
+
+// Handle rejecting friend request
+  const handleReject = async (requestId) => {
+    try {
+      await api.post(`/friends/decline/${requestId}`, {}, { headers: authHeaders() });
+      setFriendRequests(prev => prev.filter((r) => r.id !== requestId));
+    } catch (err) {
+      console.error("Error rejecting friend request", err);
+    }
+  };
+
 
   return (
     <div
@@ -84,21 +115,35 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
       }}
     >
       {/* Top: Logo */}
-      <div style={{ marginBottom: 32, cursor: "pointer" }} onClick={() => navigate("/")}>
-        <h3 style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>Insta</h3>
+      <div
+        style={{ marginBottom: 32, cursor: "pointer" }}
+        onClick={() => navigate("/")}
+      >
+        <h3 style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+          Insta
+        </h3>
       </div>
 
       {/* Middle: Nav Links */}
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <button onClick={() => navigate("/")} style={{ cursor: "pointer" }}>🏠</button>
-        <button onClick={() => navigate("/search")} style={{ cursor: "pointer" }}>🔍</button>
-        <button onClick={() => navigate("/create")} style={{ cursor: "pointer" }}>➕</button>
+        <button onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+          🏠
+        </button>
+        <button onClick={() => navigate("/search")} style={{ cursor: "pointer" }}>
+          🔍
+        </button>
+        <button onClick={() => navigate("/create")} style={{ cursor: "pointer" }}>
+          ➕
+        </button>
 
         {/* Friend request notifications */}
         {user && (
           <div style={{ position: "relative" }}>
             <button
-              onClick={() => { setRequestsOpen(prev => !prev); setFriendsOpen(false); }}
+              onClick={() => {
+                setRequestsOpen((prev) => !prev);
+                setFriendsOpen(false);
+              }}
               style={{ cursor: "pointer" }}
             >
               🔔 {friendRequests.length > 0 && `(${friendRequests.length})`}
@@ -107,7 +152,13 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
               <FriendRequestsDropdown
                 requests={friendRequests}
                 authHeaders={authHeaders}
-                onRequestHandled={updated => setFriendRequests(prev => prev.filter(r => r.id !== updated.id))}
+                onRequestHandled={(updated) =>
+                  setFriendRequests((prev) =>
+                    prev.filter((r) => r.id !== updated.id)
+                  )
+                }
+                onAccept={handleAccept}
+                onReject={handleReject}
               />
             )}
           </div>
@@ -117,7 +168,10 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
         {user && (
           <div style={{ position: "relative" }}>
             <button
-              onClick={() => { setFriendsOpen(prev => !prev); setRequestsOpen(false); }}
+              onClick={() => {
+                setFriendsOpen((prev) => !prev);
+                setRequestsOpen(false);
+              }}
               style={{ cursor: "pointer" }}
             >
               👥 Friends {friends.length > 0 && `(${friends.length})`}
@@ -126,7 +180,7 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
               <FriendsDropdown
                 friends={friends}
                 authHeaders={authHeaders}
-                onSelectFriend={friend => navigate(`/user/${friend.id}`)}
+                onSelectFriend={(friend) => navigate(`/user/${friend.id}`)}
                 onUnfriend={handleUnfriend} // pass handler here
               />
             )}
@@ -136,7 +190,11 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
 
       {/* Bottom: Profile */}
       <div style={{ marginBottom: 16 }}>
-        <ProfilePicture user={user} authHeaders={authHeaders} onUpdateUser={onUpdateUser} />
+        <ProfilePicture
+          user={user}
+          authHeaders={authHeaders}
+          onUpdateUser={onUpdateUser}
+        />
       </div>
     </div>
   );
