@@ -12,6 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- now we have updated posts table so that now we can also upload and post images using cloudinary
+-- ALTER TABLE posts
+-- ADD COLUMN image_url VARCHAR(500) NULL,
+-- ADD COLUMN image_public_id VARCHAR(255) NULL;
+
 CREATE TABLE IF NOT EXISTS posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -115,9 +121,6 @@ CREATE TABLE IF NOT EXISTS friend_requests (
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- 2️⃣ Create friends view (drop first if exists, then create)
-DROP VIEW IF EXISTS friends;
 
 CREATE VIEW friends AS
 SELECT 

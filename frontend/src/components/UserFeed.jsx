@@ -96,7 +96,7 @@ export default function UserFeed({ user, authHeaders }) {
         setUserProfile(userRes.data);
 
         // 2️⃣ Fetch user's posts
-        const postsRes = await api.get(`/users/${userId}/posts`, { headers: authHeaders() });
+        const postsRes = await api.get(`/posts/user/${userId}`, { headers: authHeaders() });
         const serverPosts = (postsRes.data || []).map(p =>
           normalizePost(p, userRes.data)
         );
@@ -123,6 +123,7 @@ export default function UserFeed({ user, authHeaders }) {
   function normalizePost(post, fallbackUserProfile) {
     return {
       ...post,
+      image_url: post.image_url ?? null,  // ✅ add this
       likes_count: post.likes_count ?? 0,
       views_count: post.views_count ?? 0,
       comments_count: post.comments_count ?? 0,

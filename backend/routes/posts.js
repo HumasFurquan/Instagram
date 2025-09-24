@@ -2,8 +2,21 @@
 import express from 'express';
 import pool from '../config/db.js';
 import auth from '../middleware/auth.js';
+import multer from 'multer';
+import cloudinary from '../config/cloudinary.js';
+import { promises as fs } from 'fs';
 
 const router = express.Router();
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
+    }
+    cb(null, true);
+  }
+});
 
 // Helper to emit safely
 function emit(req, event, payload) {
@@ -12,21 +25,41 @@ function emit(req, event, payload) {
 }
 
 // ---------------- Create a Post ----------------
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     const userId = req.user.id;
     const { content } = req.body;
-    if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
 
-    // Insert post
-    const [result] = await pool.query(
-      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-      [userId, content]
+    if (!content && !req.file) 
+      return res.status(400).json({ error: 'Post must have content or image' });
+
+    let image_url = null;
+    let image_public_id = null;
+
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, { folder: 'posts' });
+        image_url = result.secure_url;
+        image_public_id = result.public_id;
+      } finally {
+        if (req.file) {
+          try {
+            await fs.unlink(req.file.path);
+          } catch (err) {
+            console.error('Failed to delete temp file:', err);
+          }
+        }
+      }
+    }
+
+    const [resultInsert] = await pool.query(
+      'INSERT INTO posts (user_id, content, image_url, image_public_id) VALUES (?, ?, ?, ?)',
+      [userId, content || null, image_url, image_public_id]
     );
-    const postId = result.insertId;
+    const postId = resultInsert.insertId;
 
     // Parse hashtags (#something)
-    const hashtags = [...new Set((content.match(/#\w+/g) || []).map(tag => tag.toLowerCase()))];
+    const hashtags = [...new Set(((content || '').match(/#\w+/g) || []).map(tag => tag.toLowerCase()))];
     for (let tag of hashtags) {
       const [rows] = await pool.query('INSERT IGNORE INTO hashtags (tag) VALUES (?)', [tag]);
       const [tagRow] = await pool.query('SELECT id FROM hashtags WHERE tag = ?', [tag]);
@@ -34,7 +67,7 @@ router.post('/', auth, async (req, res) => {
     }
 
   // Parse mentions (@username)
-  const mentions = [...new Set((content.match(/@\w+/g) || []).map(m => m.substring(1)))];
+  const mentions = [...new Set(((content || '').match(/@\w+/g) || []).map(m => m.substring(1)))];
 
   for (let username of mentions) {
     const [userRows] = await pool.query(
@@ -54,7 +87,7 @@ router.post('/', auth, async (req, res) => {
 
     // Fetch the full post back
     const [rows] = await pool.query(
-      `SELECT p.id, p.content, p.created_at, u.id AS user_id, u.username, u.profile_picture_url
+      `SELECT p.id, p.content, p.image_url, p.created_at, u.id AS user_id, u.username, u.profile_picture_url
        FROM posts p JOIN users u ON p.user_id = u.id
        WHERE p.id = ?`,
       [postId]
@@ -71,6 +104,9 @@ router.post('/', auth, async (req, res) => {
 
     res.status(201).json(newPost);
   } catch (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: err.message });
+    }
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
@@ -85,6 +121,7 @@ router.get('/', auth, async (req, res) => {
       `SELECT
          p.id,
          p.content,
+         p.image_url,
          p.created_at,
          u.id AS user_id,
          u.username,
@@ -128,7 +165,56 @@ router.get('/', auth, async (req, res) => {
 
     res.json(transformed);
   } catch (err) {
-    console.error('Feed error:', err);
+    console.error('Feed error:', err.message, err.stack);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get posts for a specific user
+router.get('/user/:userId', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user.id;
+
+    const [rows] = await pool.query(
+      `SELECT 
+         p.id,
+         p.content,
+         p.image_url,
+         p.created_at,
+         u.id AS user_id,
+         u.username,
+         u.profile_picture_url,
+         COUNT(DISTINCT l.id) AS likes_count,
+         COUNT(DISTINCT v.id) AS views_count,
+         COUNT(DISTINCT c.id) AS comments_count,
+         MAX(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS liked,
+         EXISTS (
+           SELECT 1 FROM follows f WHERE f.follower_id = ? AND f.followee_id = p.user_id
+         ) AS is_following_author
+       FROM posts p
+       JOIN users u ON p.user_id = u.id
+       LEFT JOIN likes l ON l.post_id = p.id
+       LEFT JOIN views v ON v.post_id = p.id
+       LEFT JOIN comments c ON c.post_id = p.id
+       WHERE p.user_id = ?
+       GROUP BY p.id
+       ORDER BY p.created_at DESC`,
+      [currentUserId, currentUserId, userId]
+    );
+
+    const transformed = rows.map(r => ({
+      ...r,
+      likes_count: Number(r.likes_count || 0),
+      views_count: Number(r.views_count || 0),
+      comments_count: Number(r.comments_count || 0),
+      liked: Boolean(r.liked),
+      is_following_author: Boolean(r.is_following_author),
+    }));
+
+    res.json(transformed);
+  } catch (err) {
+    console.error('User posts error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -272,7 +358,7 @@ router.post('/:id/comment', auth, async (req, res) => {
     const commentId = result.insertId;
 
     const [rows] = await pool.query(
-      `SELECT c.id, c.content, c.created_at, u.id AS user_id, u.username
+      `SELECT c.id, c.content, c.created_at, u.id AS user_id, u.username, u.profile_picture_url
        FROM comments c
        JOIN users u ON c.user_id = u.id
        WHERE c.id = ?`,

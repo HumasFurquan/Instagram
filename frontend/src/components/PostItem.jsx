@@ -212,7 +212,25 @@ export default function PostItem({
         </div>
       </div>
 
-      <p style={{ whiteSpace: "pre-wrap" }}>{renderContentWithLinks(localPost.content)}</p>
+      <p style={{ whiteSpace: "pre-wrap" }}>
+        {renderContentWithLinks(localPost.content)}
+      </p>
+
+      {localPost.image_url && (
+        <div style={{ marginTop: 8 }}>
+          <img
+            src={localPost.image_url}
+            alt="Post"
+            style={{
+              maxWidth: '300px',   // limit width
+              maxHeight: '300px',  // limit height
+              width: 'auto',       // maintain aspect ratio
+              height: 'auto',
+              borderRadius: 8,
+            }}
+          />
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button
