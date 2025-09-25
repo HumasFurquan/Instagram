@@ -16,7 +16,8 @@ export default function PostItem({
   friendsList = [], 
   onNewComment,
   onUnfriend,
-  onSentRequest 
+  onSentRequest,
+  onDelete 
 }) {
   const [localPost, setLocalPost] = useState(post);
   const [showComments, setShowComments] = useState(false);

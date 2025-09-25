@@ -186,6 +186,9 @@ export default function UserFeed({ user, authHeaders }) {
           friendsList={friendsList}          
           pendingRequests={pendingRequests}  
           sentRequests={sentRequests}       // ✅ pass sent requests
+          onDelete={(postId) => {
+            setPosts(prev => prev.filter(post => post.id !== postId));
+          }} // ✅ pass delete handler
         />
       ))}
     </div>
