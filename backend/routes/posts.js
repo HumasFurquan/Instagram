@@ -112,6 +112,48 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   }
 });
 
+// DELETE /posts/:postId
+router.delete('/:postId', auth, async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    // 1. Check if post exists
+    const [rows] = await pool.query('SELECT * FROM posts WHERE id = ?', [postId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const post = rows[0];
+
+    // 2. Check if current user is owner
+    if (post.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this post' });
+    }
+
+    // 3. Delete image from Cloudinary if exists
+    if (post.image_public_id) {
+      await cloudinary.uploader.destroy(post.image_public_id);
+    }
+
+    // 4. Delete related data (likes, comments, etc.)
+    await pool.query('DELETE FROM likes WHERE post_id = ?', [postId]);
+    await pool.query('DELETE FROM comments WHERE post_id = ?', [postId]);
+    await pool.query('DELETE FROM post_hashtags WHERE post_id = ?', [postId]);
+    await pool.query('DELETE FROM post_mentions WHERE post_id = ?', [postId]);
+
+    // 5. Finally delete post
+    await pool.query('DELETE FROM posts WHERE id = ?', [postId]);
+
+    // (Optional) emit socket event so frontend removes it in real-time
+    emit(req, 'delete_post', { postId: Number(postId) });
+
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ---------------- Feed (auth required, only followees + self) ----------------
 router.get('/', auth, async (req, res) => {
   try {

@@ -207,6 +207,9 @@ export default function Feed() {
               // 🔑 instantly update friends list when unfriended
               setFriendsList(prev => prev.filter(id => id !== friendId));
             }}
+            onDelete={(postId) => {
+              setPosts(prev => prev.filter(post => post.id !== postId));
+            }}
           />
         </div>
       ))}

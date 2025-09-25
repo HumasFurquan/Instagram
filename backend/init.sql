@@ -12,16 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- now we have updated posts table so that now we can also upload and post images using cloudinary
--- ALTER TABLE posts
--- ADD COLUMN image_url VARCHAR(500) NULL,
--- ADD COLUMN image_public_id VARCHAR(255) NULL;
-
 CREATE TABLE IF NOT EXISTS posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   content TEXT,
+  image_url VARCHAR(500) NULL,
+  image_public_id VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

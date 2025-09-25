@@ -209,6 +209,33 @@ export default function PostItem({
 
         <div style={{ textAlign: "right", fontSize: 13, color: "#333" }}>
           {localPost.views_count ?? 0} views · {localPost.comments_count ?? 0} comments
+
+          {user && user.id === localPost.user_id && (
+          <button
+            onClick={async () => {
+              if (!window.confirm("Are you sure you want to delete this post?")) return;
+              try {
+                await api.delete(`/posts/${localPost.id}`, { headers: authHeaders() });
+                if (typeof onDelete === "function") {
+                  onDelete(localPost.id); // notify parent Feed
+                }
+              } catch (err) {
+                console.error("Delete failed:", err.response?.data || err);
+                alert("Failed to delete post. Try again.");
+              }
+            }}
+            style={{
+              marginLeft: 10,
+              padding: "4px 8px",
+              borderRadius: 4,
+              backgroundColor: "red",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
+            🗑️ Delete
+          </button>
+        )}
         </div>
       </div>
 
