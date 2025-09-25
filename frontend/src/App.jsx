@@ -9,11 +9,15 @@ import CreatePost from './components/CreatePost';
 import UserFeed from './components/UserFeed';
 import SearchBar from './components/SearchBar';
 import Navbar from './components/Navbar';
+import ChatWindow from './components/ChatWindow';
+import useSocket from './hooks/useSocket';
 import api from './api';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+
+  const socket = useSocket();
 
   const handleAuth = ({ token, user }) => {
     console.log("✅ handleAuth called, setting user:", user);
@@ -92,6 +96,10 @@ export default function App() {
                     onUpdateUser={updateUser}
                   />
                 }
+              />
+              <Route 
+                path="/messages/:friendId" 
+                element={<ChatWindow user={user} authHeaders={authHeaders} socket={socket} />}  // 👈 new route
               />
             </Routes>
           </>

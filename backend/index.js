@@ -13,6 +13,7 @@ import eventsRoutes from './routes/events.js';
 import followsRoutes from './routes/follows.js';
 import userRoutes from './routes/users.js';
 import friendsRoutes from './routes/friends.js';
+import messagesRoutes from './routes/messages.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -118,6 +119,26 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     console.log(`User ${userId} disconnected from socket ${socket.id}`);
   });
+
+  socket.on('sendMessage', async ({ receiverId, content }) => {
+    try {
+      // Save the message to DB
+      const [result] = await pool.query(
+        'INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)',
+        [socket.userId, receiverId, content]
+      );
+
+      const [rows] = await pool.query('SELECT * FROM messages WHERE id = ?', [result.insertId]);
+      const message = rows[0];
+
+      // Emit to sender and receiver instantly
+      io.to(`user_${receiverId}`).emit('new_message', message);
+      io.to(`user_${socket.userId}`).emit('new_message', message);
+
+    } catch (err) {
+      console.error('Error sending message:', err);
+    }
+  });
 });
 
 // ------------------- Routes -------------------
@@ -127,6 +148,7 @@ app.use('/events', eventsRoutes);
 app.use('/follows', followsRoutes);
 app.use('/users', userRoutes);
 app.use('/friends', friendsRoutes);
+app.use('/messages', messagesRoutes);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

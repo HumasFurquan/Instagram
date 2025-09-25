@@ -12,6 +12,7 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
   const [friends, setFriends] = useState([]);
   const [requestsOpen, setRequestsOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [messagesOpen, setMessagesOpen] = useState(false);
 
   // Fetch pending requests + accepted friends
   useEffect(() => {
@@ -94,6 +95,10 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
     }
   };
 
+  const handleOpenChat = (friend) => {
+    navigate(`/messages/${friend.id}`);
+    setMessagesOpen(false);
+  };
 
   return (
     <div
@@ -160,6 +165,63 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
                 onAccept={handleAccept}
                 onReject={handleReject}
               />
+            )}
+          </div>
+        )}
+
+        {/* Messages button */}
+        {user && (
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => {
+                setMessagesOpen(prev => !prev);
+                setRequestsOpen(false);
+                setFriendsOpen(false);
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              💬 Messages
+            </button>
+            {messagesOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "36px",
+                  left: "100%",
+                  backgroundColor: "#fff",
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  width: 200,
+                  maxHeight: 300,
+                  overflowY: "auto",
+                  zIndex: 1000,
+                }}
+              >
+                {friends.map(friend => (
+                  <div
+                    key={friend.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "4px 8px",
+                      borderBottom: "1px solid #eee"
+                    }}
+                  >
+                    <span>{friend.username}</span>
+                    <button
+                      style={{
+                        padding: "2px 6px",
+                        fontSize: 12,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => handleOpenChat(friend)}
+                    >
+                      Chat
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

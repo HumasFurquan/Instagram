@@ -124,3 +124,16 @@ SELECT
   CASE WHEN sender_id > receiver_id THEN sender_id ELSE receiver_id END AS user2
 FROM friend_requests
 WHERE status = 'accepted';
+
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_read BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_sender (sender_id),
+  INDEX idx_receiver (receiver_id)
+);

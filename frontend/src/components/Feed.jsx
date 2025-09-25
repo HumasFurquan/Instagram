@@ -10,6 +10,7 @@ export default function Feed() {
   const [friendsList, setFriendsList] = useState([]); // track friends
   const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeChatFriend, setActiveChatFriend] = useState(null); // friend currently chatting
 
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -213,6 +214,18 @@ export default function Feed() {
           />
         </div>
       ))}
+
+      {/* ---------------- Chat Window ---------------- */}
+      {activeChatFriend && (
+        <ChatWindow
+          friend={activeChatFriend}
+          user={user}
+          authHeaders={authHeaders}
+          socket={socket}
+          onClose={() => setActiveChatFriend(null)}
+        />
+      )}
+
     </div>
   );
 }
