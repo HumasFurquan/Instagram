@@ -119,7 +119,8 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     console.log(`User ${userId} disconnected from socket ${socket.id}`);
   });
-
+  
+  // ----------------- Messaging -----------------
   socket.on('sendMessage', async ({ receiverId, content }) => {
     try {
       // Save the message to DB
@@ -138,6 +139,37 @@ io.on('connection', socket => {
     } catch (err) {
       console.error('Error sending message:', err);
     }
+  });
+
+  // ----------------- Call Signaling -----------------
+  socket.on('call:offer', ({ receiverId, offer, meta }) => {
+    io.to(`user_${receiverId}`).emit('call:offer', {
+      offer,
+      callerId: socket.userId,
+      meta: meta || {}
+    });
+  });
+
+  socket.on('call:answer', ({ callerId, answer }) => {
+    io.to(`user_${callerId}`).emit('call:answer', {
+      answer,
+      calleeId: socket.userId
+    });
+  });
+
+  socket.on('call:ice-candidate', ({ targetId, candidate }) => {
+    io.to(`user_${targetId}`).emit('call:ice-candidate', {
+      candidate,
+      fromId: socket.userId
+    });
+  });
+
+  socket.on('call:hangup', ({ targetId }) => {
+    io.to(`user_${targetId}`).emit('call:hangup', { fromId: socket.userId });
+  });
+
+  socket.on('call:reject', ({ callerId }) => {
+    io.to(`user_${callerId}`).emit('call:rejected', { fromId: socket.userId });
   });
 });
 

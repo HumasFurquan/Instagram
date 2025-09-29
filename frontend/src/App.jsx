@@ -17,7 +17,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
 
-  const socket = useSocket();
+  const socket = useSocket(); // ✅ socket returned immediately
 
   const handleAuth = ({ token, user }) => {
     console.log("✅ handleAuth called, setting user:", user);
@@ -37,7 +37,6 @@ export default function App() {
 
   const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
-  // Update user state and localStorage when profile picture changes
   const updateUser = (newUser) => {
     setUser(newUser);
     localStorage.setItem('user', JSON.stringify(newUser));
@@ -59,10 +58,7 @@ export default function App() {
 
   return (
     <Router>
-      {/* Navbar fixed outside the scrollable content */}
       {token && <Navbar user={user} authHeaders={authHeaders} onLogout={logout} onUpdateUser={updateUser} />}
-
-      {/* Main content shifted right by 100px to avoid overlap */}
       <div style={{ marginLeft: token ? 100 : 0, maxWidth: 600, padding: 16 }}>
         <h1>Instagram-lite</h1>
 
@@ -75,14 +71,13 @@ export default function App() {
         ) : (
           <>
             <SearchBar />
-
             <Routes>
               <Route 
                 path="/" 
                 element={
                   <>
                     <CreatePost token={token} />
-                    <Feed />
+                    <Feed socket={socket} user={user} authHeaders={authHeaders} />
                   </>
                 } 
               />
@@ -94,12 +89,13 @@ export default function App() {
                     authHeaders={authHeaders} 
                     toggleFollow={toggleFollow} 
                     onUpdateUser={updateUser}
+                    socket={socket} // pass socket if needed
                   />
                 }
               />
               <Route 
                 path="/messages/:friendId" 
-                element={<ChatWindow user={user} authHeaders={authHeaders} socket={socket} />}  // 👈 new route
+                element={<ChatWindow user={user} authHeaders={authHeaders} socket={socket} />}
               />
             </Routes>
           </>

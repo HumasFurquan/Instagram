@@ -3,13 +3,27 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 
+const PC_CONFIG = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
+
 export default function ChatWindow({ user, authHeaders, socket }) {
   const { friendId } = useParams();
   const navigate = useNavigate();
   const [friend, setFriend] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+
+  // ---- WebRTC call state ----
+  const [callState, setCallState] = useState("idle"); // idle, calling, ringing, in-call
+  const [incomingCaller, setIncomingCaller] = useState(null);
+
   const messagesEndRef = useRef(null);
+
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const pendingOfferRef = useRef(null); // used when an incoming offer arrives
 
   // Scroll to bottom when messages update
   const scrollToBottom = () => {
@@ -65,7 +79,7 @@ export default function ChatWindow({ user, authHeaders, socket }) {
     }, [socket, friend, user]);
 
   const sendMessage = () => {
-    if (!newMessage.trim() || !socket) return;
+    if (!newMessage.trim() || !socket || !friend) return;
 
     socket.emit('sendMessage', { 
         receiverId: friend.id, 
@@ -74,6 +88,215 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
     setNewMessage(""); // clear input
     };
+
+    useEffect(() => {
+    if (!socket) return;
+
+    // Incoming offer (someone is calling you)
+    const handleOffer = async ({ offer, callerId, meta }) => {
+      // If the incoming is not for current chat friend, ignore (or optionally notify)
+      if (Number(callerId) !== Number(friendId)) {
+        // optional global incoming-call UI
+        return;
+      }
+
+      // Save offer and show accept UI
+      pendingOfferRef.current = { offer, callerId, meta };
+      setIncomingCaller({ id: callerId, meta });
+      setCallState("ringing");
+    };
+
+    const handleAnswer = async ({ answer, calleeId }) => {
+      // if caller (we initiated), set remote description
+      if (pcRef.current && answer) {
+        try {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+          setCallState("in-call");
+        } catch (err) {
+          console.error("Error setting remote description (answer)", err);
+        }
+      }
+    };
+
+    const handleIce = async ({ candidate, fromId }) => {
+      if (!pcRef.current || !candidate) return;
+      try {
+        await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.warn("Error adding ICE candidate", err);
+      }
+    };
+
+    const handleHangup = ({ fromId }) => {
+      // end call
+      closeCall();
+      // optionally show a 'call ended' message
+    };
+
+    const handleRejected = ({ fromId }) => {
+      // callee rejected
+      closeCall();
+      alert("Call was rejected.");
+    };
+
+    socket.on("call:offer", handleOffer);
+    socket.on("call:answer", handleAnswer);
+    socket.on("call:ice-candidate", handleIce);
+    socket.on("call:hangup", handleHangup);
+    socket.on("call:rejected", handleRejected);
+
+    return () => {
+      socket.off("call:offer", handleOffer);
+      socket.off("call:answer", handleAnswer);
+      socket.off("call:ice-candidate", handleIce);
+      socket.off("call:hangup", handleHangup);
+      socket.off("call:rejected", handleRejected);
+    };
+  }, [socket, friendId]);
+
+  // ---------------- Caller: start call ----------------
+  const startCall = async () => {
+    if (!socket || !friend) return alert("Socket or friend not ready.");
+    setCallState("calling");
+
+    try {
+      const localStream = await ensureLocalStream();
+      const pc = createPeerConnection(friend.id);
+
+      // add local tracks
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      // create offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // send offer via signaling server
+      socket.emit("call:offer", {
+        receiverId: friend.id,
+        offer: pc.localDescription,
+        meta: { username: user?.username, id: user?.id }
+      });
+      // waiting for answer...
+    } catch (err) {
+      console.error("Failed to start call", err);
+      closeCall();
+      alert("Could not start call (microphone permission?).");
+    }
+  };
+
+  // ---------------- Callee: accept incoming call ----------------
+  const acceptCall = async () => {
+    const pending = pendingOfferRef.current;
+    if (!pending || !socket) return;
+    setCallState("in-call");
+    try {
+      const localStream = await ensureLocalStream();
+      const pc = createPeerConnection(pending.callerId);
+
+      // add local tracks
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      // set remote (offer)
+      await pc.setRemoteDescription(new RTCSessionDescription(pending.offer));
+
+      // create answer
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      // send answer back to caller
+      socket.emit("call:answer", {
+        callerId: pending.callerId,
+        answer: pc.localDescription,
+      });
+
+      pendingOfferRef.current = null;
+      setIncomingCaller(null);
+    } catch (err) {
+      console.error("Accept call failed", err);
+      closeCall();
+    }
+  };
+
+  // ---------------- Callee: decline ----------------
+  const declineCall = () => {
+    const pending = pendingOfferRef.current;
+    if (!pending || !socket) {
+      setCallState("idle");
+      pendingOfferRef.current = null;
+      setIncomingCaller(null);
+      return;
+    }
+    // notify caller
+    socket.emit("call:reject", { callerId: pending.callerId });
+    pendingOfferRef.current = null;
+    setIncomingCaller(null);
+    setCallState("idle");
+  };
+
+  // ---------------- Hangup (either side) ----------------
+  const hangup = () => {
+    // inform remote
+    if (socket && pcRef.current) {
+      // find remote id (friend.id or incomingCaller)
+      const otherId = (callState === "ringing" && incomingCaller?.id) ? incomingCaller.id : friend?.id;
+      if (otherId) socket.emit("call:hangup", { targetId: otherId });
+    }
+    closeCall();
+  };
+
+    // ---------------- WebRTC: helpers ----------------
+  function createPeerConnection(targetId) {
+    const pc = new RTCPeerConnection(PC_CONFIG);
+    pcRef.current = pc;
+
+    // when remote track arrives -> attach to audio element
+    pc.ontrack = (ev) => {
+      const [remoteStream] = ev.streams;
+      if (remoteAudioRef.current) remoteAudioRef.current.srcObject = remoteStream;
+    };
+
+    // ICE candidate -> send to other peer via socket
+    pc.onicecandidate = (ev) => {
+      if (ev.candidate && socket && targetId) {
+        socket.emit("call:ice-candidate", {
+          targetId,
+          candidate: ev.candidate,
+        });
+      }
+    };
+
+    return pc;
+  }
+
+  async function ensureLocalStream() {
+    if (localStreamRef.current) return localStreamRef.current;
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = s;
+      return s;
+    } catch (err) {
+      console.error("getUserMedia error", err);
+      throw err;
+    }
+  }
+
+  function closeCall() {
+    setCallState("idle");
+    setIncomingCaller(null);
+    // stop local tracks
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
+    // close pc
+    if (pcRef.current) {
+      try { pcRef.current.close(); } catch (e) {}
+      pcRef.current = null;
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
+    }
+  }
 
   if (!friend) return <div>Loading chat...</div>;
 
@@ -84,6 +307,23 @@ export default function ChatWindow({ user, authHeaders, socket }) {
         <span>{friend.username}</span>
         <button onClick={() => navigate(-1)} style={{ cursor: "pointer" }}>✖</button>
       </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={startCall} disabled={callState !== "idle" || !friend || !socket}>🎙️ Voice Call</button>
+        {callState === "in-call" && (
+          <button onClick={hangup} style={{ backgroundColor: "red", color: "#fff" }}>End Call</button>
+        )}
+      </div>
+
+      {callState === "ringing" && incomingCaller && (
+        <div style={{ padding: 12, background: "#ffeeba", display: "flex", justifyContent: "space-between" }}>
+          <div>Incoming call from <b>{incomingCaller.meta?.username || incomingCaller.id}</b></div>
+          <div>
+            <button onClick={acceptCall}>Accept</button>
+            <button onClick={declineCall}>Decline</button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", height: 400, padding: "8px 16px", backgroundColor: "#f9f9f9" }}>
@@ -111,6 +351,7 @@ export default function ChatWindow({ user, authHeaders, socket }) {
           Send
         </button>
       </div>
+      <audio ref={remoteAudioRef} autoPlay />
     </div>
   );
 }
