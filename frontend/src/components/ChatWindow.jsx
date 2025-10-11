@@ -1,14 +1,116 @@
 // src/components/ChatWindow.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
+import VideoCall from "./VideoCall";
+import useSocket from "../hooks/useSocket";
 
 const PC_CONFIG = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
-export default function ChatWindow({ user, authHeaders, socket }) {
+export default function ChatWindow({ user, authHeaders }) {
   const { friendId } = useParams();
+
+  // Handlers
+  const handleNewMessage = (message) => {
+    if (
+      (message.sender_id === friend?.id && message.receiver_id === user.id) ||
+      (message.sender_id === user.id && message.receiver_id === friend?.id)
+    ) {
+      console.log("📩 New message received in this chat:", message);
+      setMessages((prev) => [...prev, message]);
+    }
+  };
+
+  // Incoming offer (someone is calling you)
+    const handleOffer = async ({ offer, callerId, meta }) => {
+    console.log("📞 Incoming call offer from:", callerId, meta);
+
+    // Save offer and show accept UI
+    pendingOfferRef.current = { offer, callerId, meta };
+    setIncomingCaller({ id: callerId, meta });
+    setCallState("ringing");
+
+    // Ensure the video modal opens automatically
+    setShowVideoCall(true);
+  };
+
+    const handleAnswer = async ({ answer, calleeId }) => {
+      console.log("📞 Received ANSWER from callee:", calleeId);
+
+      // if caller (we initiated), set remote description
+      if (pcRef.current && answer) {
+        try {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+          console.log("✅ Remote description set with answer.");
+          setCallState("in-call");
+        } catch (err) {
+          console.error("❌ Error setting remote description (answer)", err);
+        }
+      }
+    };
+
+    const handleIce = async ({ candidate, fromId }) => {
+      console.log("❄️ Received ICE candidate from:", fromId, candidate);
+      if (!pcRef.current || !candidate) return;
+      try {
+        await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("✅ ICE candidate added.");
+      } catch (err) {
+        console.warn("⚠️ Error adding ICE candidate", err);
+      }
+    };
+
+    const handleHangup = ({ fromId }) => {
+      console.log("📴 Hangup received from:", fromId);
+      // end call
+      closeCall();
+      // optionally show a 'call ended' message
+    };
+
+    const handleRejected = ({ fromId }) => {
+      console.log("🚫 Call rejected by:", fromId);
+      // callee rejected
+      closeCall();
+      alert("Call was rejected.");
+    };
+
+  // Import the new hook
+  const socket = useSocket({
+    onNewMessage: handleNewMessage,
+    onCallOffer: handleOffer,
+    onCallAnswer: handleAnswer,
+    onIceCandidate: handleIce,
+    onHangup: handleHangup,
+    onRejected: handleRejected,
+  });
+
+  const [connected, setConnected] = useState(false);
+
+  // track connection state
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleConnect = () => {
+      console.log("🔌 Socket connected!");
+      setConnected(true);
+    };
+
+    const handleDisconnect = () => {
+      console.log("❌ Socket disconnected!");
+      setConnected(false);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+    };
+  }, [socket]);
+
   const navigate = useNavigate();
   const [friend, setFriend] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -17,6 +119,28 @@ export default function ChatWindow({ user, authHeaders, socket }) {
   // ---- WebRTC call state ----
   const [callState, setCallState] = useState("idle"); // idle, calling, ringing, in-call
   const [incomingCaller, setIncomingCaller] = useState(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
+
+  // Auto-open video modal when there's an incoming call
+  useEffect(() => {
+    console.log("📡 Call state changed:", callState);
+    // if (callState === "ringing") setShowVideoCall(true);
+    // console.log("📞 Showing incoming call popup.");
+  }, [callState]);
+
+  const openVideoModal = (isOutgoing = false) => {
+    if (!incomingCaller && callState !== "in-call" && !isOutgoing) {
+      console.warn("⚠️ No incoming caller and not in call, modal will not open");
+      return;
+    }
+    console.log("🎥 Opening video modal");
+    setShowVideoCall(true);
+  };
+
+  const closeVideoModal = () => {
+    console.log("❌ Closing video modal");
+    setShowVideoCall(false);
+  };
 
   const messagesEndRef = useRef(null);
 
@@ -36,9 +160,10 @@ export default function ChatWindow({ user, authHeaders, socket }) {
     async function fetchFriend() {
       try {
         const res = await api.get(`/users/${friendId}`, { headers: authHeaders() });
+        console.log("👤 Friend info loaded:", res.data);
         setFriend(res.data);
       } catch (err) {
-        console.error("Failed to fetch friend info", err);
+        console.error("❌ Failed to fetch friend info", err);
       }
     }
     fetchFriend();
@@ -89,55 +214,8 @@ export default function ChatWindow({ user, authHeaders, socket }) {
     setNewMessage(""); // clear input
     };
 
-    useEffect(() => {
+  useEffect(() => {
     if (!socket) return;
-
-    // Incoming offer (someone is calling you)
-    const handleOffer = async ({ offer, callerId, meta }) => {
-      // If the incoming is not for current chat friend, ignore (or optionally notify)
-      if (Number(callerId) !== Number(friendId)) {
-        // optional global incoming-call UI
-        return;
-      }
-
-      // Save offer and show accept UI
-      pendingOfferRef.current = { offer, callerId, meta };
-      setIncomingCaller({ id: callerId, meta });
-      setCallState("ringing");
-    };
-
-    const handleAnswer = async ({ answer, calleeId }) => {
-      // if caller (we initiated), set remote description
-      if (pcRef.current && answer) {
-        try {
-          await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-          setCallState("in-call");
-        } catch (err) {
-          console.error("Error setting remote description (answer)", err);
-        }
-      }
-    };
-
-    const handleIce = async ({ candidate, fromId }) => {
-      if (!pcRef.current || !candidate) return;
-      try {
-        await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (err) {
-        console.warn("Error adding ICE candidate", err);
-      }
-    };
-
-    const handleHangup = ({ fromId }) => {
-      // end call
-      closeCall();
-      // optionally show a 'call ended' message
-    };
-
-    const handleRejected = ({ fromId }) => {
-      // callee rejected
-      closeCall();
-      alert("Call was rejected.");
-    };
 
     socket.on("call:offer", handleOffer);
     socket.on("call:answer", handleAnswer);
@@ -152,11 +230,12 @@ export default function ChatWindow({ user, authHeaders, socket }) {
       socket.off("call:hangup", handleHangup);
       socket.off("call:rejected", handleRejected);
     };
-  }, [socket, friendId]);
+  }, [socket]);
 
   // ---------------- Caller: start call ----------------
   const startCall = async () => {
     if (!socket || !friend) return alert("Socket or friend not ready.");
+    console.log("📞 Starting call to:", friend.id);
     setCallState("calling");
 
     try {
@@ -165,10 +244,12 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
       // add local tracks
       localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      console.log("🎙️ Local stream tracks added.");
 
       // create offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      console.log("📤 Sending offer:", offer);
 
       // send offer via signaling server
       socket.emit("call:offer", {
@@ -178,7 +259,7 @@ export default function ChatWindow({ user, authHeaders, socket }) {
       });
       // waiting for answer...
     } catch (err) {
-      console.error("Failed to start call", err);
+      console.error("❌ Failed to start call", err);
       closeCall();
       alert("Could not start call (microphone permission?).");
     }
@@ -186,6 +267,7 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
   // ---------------- Callee: accept incoming call ----------------
   const acceptCall = async () => {
+    console.log("✅ Accepting call...");
     const pending = pendingOfferRef.current;
     if (!pending || !socket) return;
     setCallState("in-call");
@@ -198,10 +280,12 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
       // set remote (offer)
       await pc.setRemoteDescription(new RTCSessionDescription(pending.offer));
+      console.log("📥 Remote description set with offer.");
 
       // create answer
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      console.log("📤 Sending answer:", answer);
 
       // send answer back to caller
       socket.emit("call:answer", {
@@ -212,13 +296,14 @@ export default function ChatWindow({ user, authHeaders, socket }) {
       pendingOfferRef.current = null;
       setIncomingCaller(null);
     } catch (err) {
-      console.error("Accept call failed", err);
+      console.error("❌ Accept call failed", err);
       closeCall();
     }
   };
 
   // ---------------- Callee: decline ----------------
   const declineCall = () => {
+    console.log("🚫 Declining call...");
     const pending = pendingOfferRef.current;
     if (!pending || !socket) {
       setCallState("idle");
@@ -235,6 +320,7 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
   // ---------------- Hangup (either side) ----------------
   const hangup = () => {
+    console.log("📴 Hanging up...");
     // inform remote
     if (socket && pcRef.current) {
       // find remote id (friend.id or incomingCaller)
@@ -246,18 +332,21 @@ export default function ChatWindow({ user, authHeaders, socket }) {
 
     // ---------------- WebRTC: helpers ----------------
   function createPeerConnection(targetId) {
+    console.log("🔗 Creating PeerConnection with:", targetId);
     const pc = new RTCPeerConnection(PC_CONFIG);
     pcRef.current = pc;
 
     // when remote track arrives -> attach to audio element
     pc.ontrack = (ev) => {
       const [remoteStream] = ev.streams;
+      console.log("🎧 Remote track received:", remoteStream);
       if (remoteAudioRef.current) remoteAudioRef.current.srcObject = remoteStream;
     };
 
     // ICE candidate -> send to other peer via socket
     pc.onicecandidate = (ev) => {
       if (ev.candidate && socket && targetId) {
+        console.log("📤 Sending ICE candidate:", ev.candidate);
         socket.emit("call:ice-candidate", {
           targetId,
           candidate: ev.candidate,
@@ -271,16 +360,19 @@ export default function ChatWindow({ user, authHeaders, socket }) {
   async function ensureLocalStream() {
     if (localStreamRef.current) return localStreamRef.current;
     try {
+      console.log("🎙️ Requesting user media (mic/cam)...");
       const s = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = s;
+      console.log("✅ Got local stream:", s);
       return s;
     } catch (err) {
-      console.error("getUserMedia error", err);
+      console.error("❌ getUserMedia error", err);
       throw err;
     }
   }
 
   function closeCall() {
+    console.log("❌ Closing call, resetting state.");
     setCallState("idle");
     setIncomingCaller(null);
     // stop local tracks
@@ -298,6 +390,12 @@ export default function ChatWindow({ user, authHeaders, socket }) {
     }
   }
 
+  // Debugging logs
+  console.log("👤 Friend:", friend);
+  console.log("🔌 Socket:", socket);
+  console.log("📡 CallState:", callState);
+  console.log("📲 IncomingCaller:", incomingCaller);
+
   if (!friend) return <div>Loading chat...</div>;
 
   return (
@@ -309,21 +407,42 @@ export default function ChatWindow({ user, authHeaders, socket }) {
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={startCall} disabled={callState !== "idle" || !friend || !socket}>🎙️ Voice Call</button>
+        <button onClick={startCall} disabled={!connected || callState !== "idle" || !friend}>🎙️ Voice Call</button>
+        <button
+          onClick={() => {
+            openVideoModal(true); // mark as outgoing
+            startCall();           // initiate the video call
+          }}
+          disabled={!connected || !friend}
+        >
+          🎥 Video Call
+        </button>
         {callState === "in-call" && (
           <button onClick={hangup} style={{ backgroundColor: "red", color: "#fff" }}>End Call</button>
         )}
       </div>
 
       {callState === "ringing" && incomingCaller && (
-        <div style={{ padding: 12, background: "#ffeeba", display: "flex", justifyContent: "space-between" }}>
-          <div>Incoming call from <b>{incomingCaller.meta?.username || incomingCaller.id}</b></div>
-          <div>
-            <button onClick={acceptCall}>Accept</button>
-            <button onClick={declineCall}>Decline</button>
-          </div>
+      <div style={{
+        position: "fixed",
+        top: 20,
+        right: 20,
+        padding: 12,
+        background: "#ffeeba",
+        border: "1px solid #ddd",
+        borderRadius: 8,
+        zIndex: 999,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}>
+        <div>Incoming call from <b>{incomingCaller.meta?.username || incomingCaller.id}</b></div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={acceptCall} style={{ cursor: "pointer", backgroundColor: "green", color: "#fff" }}>Accept</button>
+          <button onClick={declineCall} style={{ cursor: "pointer", backgroundColor: "red", color: "#fff" }}>Decline</button>
         </div>
-      )}
+      </div>
+    )}
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", height: 400, padding: "8px 16px", backgroundColor: "#f9f9f9" }}>
@@ -351,6 +470,17 @@ export default function ChatWindow({ user, authHeaders, socket }) {
           Send
         </button>
       </div>
+      
+      {/* Video call modal */}
+      {showVideoCall && (incomingCaller || callState === "in-call") && (
+          <VideoCall
+            currentUser={user}
+            otherUserId={incomingCaller?.id || friend.id}
+            socket={socket}
+            onClose={closeVideoModal}
+          />
+      )}
+
       <audio ref={remoteAudioRef} autoPlay />
     </div>
   );

@@ -137,3 +137,19 @@ CREATE TABLE IF NOT EXISTS messages (
   INDEX idx_sender (sender_id),
   INDEX idx_receiver (receiver_id)
 );
+
+CREATE TABLE IF NOT EXISTS calls (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  caller_id INT NOT NULL,
+  callee_id INT NOT NULL,
+  call_type ENUM('voice','video') NOT NULL,
+  status ENUM('ringing','accepted','rejected','missed','ended') DEFAULT 'ringing',
+  started_at TIMESTAMP NULL,
+  ended_at TIMESTAMP NULL,
+  duration_seconds INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (caller_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (callee_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_caller (caller_id),
+  INDEX idx_callee (callee_id)
+);
