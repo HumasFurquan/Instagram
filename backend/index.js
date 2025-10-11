@@ -92,6 +92,7 @@ io.on('connection', socket => {
 
     } catch (err) {
       console.error('Error liking post:', err);
+      socket.emit('error', { type: 'likePost', message: 'Failed to like post' });
     }
   });
 
@@ -170,6 +171,37 @@ io.on('connection', socket => {
 
   socket.on('call:reject', ({ callerId }) => {
     io.to(`user_${callerId}`).emit('call:rejected', { fromId: socket.userId });
+  });
+
+  // ----------------- Video Call Signaling -----------------
+  socket.on('video:offer', ({ receiverId, offer, meta }) => {
+    io.to(`user_${receiverId}`).emit('video:offer', {
+      offer,
+      callerId: socket.userId,
+      meta: meta || {}
+    });
+  });
+
+  socket.on('video:answer', ({ callerId, answer }) => {
+    io.to(`user_${callerId}`).emit('video:answer', {
+      answer,
+      calleeId: socket.userId
+    });
+  });
+
+  socket.on('video:ice-candidate', ({ targetId, candidate }) => {
+    io.to(`user_${targetId}`).emit('video:ice-candidate', {
+      candidate,
+      fromId: socket.userId
+    });
+  });
+
+  socket.on('video:hangup', ({ targetId }) => {
+    io.to(`user_${targetId}`).emit('video:hangup', { fromId: socket.userId });
+  });
+
+  socket.on('video:reject', ({ callerId }) => {
+    io.to(`user_${callerId}`).emit('video:rejected', { fromId: socket.userId });
   });
 });
 
