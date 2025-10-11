@@ -248,6 +248,10 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
             )}
           </div>
         )}
+
+        <button onClick={() => navigate("/settings")} style={{ cursor: "pointer" }}>
+          ⚙️ Settings
+        </button>
       </div>
 
       {/* Bottom: Profile */}

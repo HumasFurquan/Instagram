@@ -12,6 +12,7 @@ import Navbar from './components/Navbar';
 import ChatWindow from './components/ChatWindow';
 import useSocket from './hooks/useSocket';
 import api from './api';
+import Settings from './components/Settings';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -97,6 +98,7 @@ export default function App() {
                 path="/messages/:friendId" 
                 element={<ChatWindow user={user} authHeaders={authHeaders} socket={socket} />}
               />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </>
         )}
