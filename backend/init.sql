@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   profile_picture_url VARCHAR(500) NULL,     -- 👈 URL of Cloudinary image
   profile_picture_public_id VARCHAR(255),    -- 👈 Cloudinary public_id (for delete/replace)
+  is_private BOOLEAN DEFAULT FALSE,  -- is_private = TRUE (private) or FALSE (public)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

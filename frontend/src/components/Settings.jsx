@@ -1,23 +1,43 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const [isPrivate, setIsPrivate] = useState(false);
 
-  const handlePrivateClick = () => {
-    console.log("Private button clicked");
-    // later you can toggle privacy in backend here
+  // Fetch current user's privacy status on mount
+  useEffect(() => {
+    const fetchPrivacy = async () => {
+      try {
+        const res = await api.get("/users/me"); // /users/me route in backend
+        setIsPrivate(res.data.is_private);
+      } catch (err) {
+        console.error("Failed to fetch privacy:", err);
+        alert("Failed to fetch your settings. Please try again.");
+      }
+    };
+    fetchPrivacy();
+  }, []);
+
+  // Toggle privacy status
+  const handlePrivateClick = async () => {
+    try {
+      const newStatus = !isPrivate;
+      await api.patch("/users/privacy", { is_private: newStatus });
+      setIsPrivate(newStatus);
+      alert(`Your profile is now ${newStatus ? "Private 🔒" : "Public 🌐"}`);
+    } catch (err) {
+      console.error("Privacy toggle error:", err);
+      alert("Failed to update privacy. Please try again.");
+    }
   };
 
+  // Logout function
   const handleLogout = () => {
-    console.log("Logging out...");
     localStorage.removeItem("token");
-
-    // 🔥 Force re-render by navigating
     navigate("/login", { replace: true });
-
-    // Optional: clear any global state or user context if you use one
-    window.location.reload(); // ensures full reset (only if needed)
+    window.location.reload();
   };
 
   return (
@@ -40,14 +60,14 @@ export default function Settings() {
           marginBottom: "20px",
           border: "none",
           borderRadius: "8px",
-          backgroundColor: "#007bff",
+          backgroundColor: isPrivate ? "#6c757d" : "#007bff",
           color: "white",
           cursor: "pointer",
           fontSize: "16px",
           width: "150px",
         }}
       >
-        Private
+        {isPrivate ? "Private 🔒" : "Public 🌐"}
       </button>
 
       <button

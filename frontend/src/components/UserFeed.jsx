@@ -1,4 +1,3 @@
-// src/components/UserFeed.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
@@ -10,11 +9,12 @@ export default function UserFeed({ user, authHeaders }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
+  const [canView, setCanView] = useState(true); // ✅ privacy flag
 
   // ---------------- State for friends ----------------
   const [friendsList, setFriendsList] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]); // requests received
-  const [sentRequests, setSentRequests] = useState([]);       // requests sent
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
 
   // ---------------- Socket handlers ----------------
   useSocket({
@@ -69,9 +69,7 @@ export default function UserFeed({ user, authHeaders }) {
       if (Number(followerId) !== Number(user.id)) return;
       setPosts(prev =>
         prev.map(p =>
-          p.user_id === followeeId
-            ? { ...p, is_following_author: true }
-            : p
+          p.user_id === followeeId ? { ...p, is_following_author: true } : p
         )
       );
     },
@@ -79,9 +77,7 @@ export default function UserFeed({ user, authHeaders }) {
       if (Number(followerId) !== Number(user.id)) return;
       setPosts(prev =>
         prev.map(p =>
-          p.user_id === followeeId
-            ? { ...p, is_following_author: false }
-            : p
+          p.user_id === followeeId ? { ...p, is_following_author: false } : p
         )
       );
     },
@@ -94,22 +90,25 @@ export default function UserFeed({ user, authHeaders }) {
         // 1️⃣ Fetch user profile
         const userRes = await api.get(`/users/${userId}`, { headers: authHeaders() });
         setUserProfile(userRes.data);
+        setCanView(userRes.data?.can_view ?? true); // ✅ privacy flag from backend
 
-        // 2️⃣ Fetch user's posts
+        // 2️⃣ Fetch user's posts (backend enforces privacy)
         const postsRes = await api.get(`/posts/user/${userId}`, { headers: authHeaders() });
         const serverPosts = (postsRes.data || []).map(p =>
           normalizePost(p, userRes.data)
         );
         setPosts(serverPosts);
 
-        // 3️⃣ Fetch my friends, pending requests, and sent requests
-        const friendsRes = await api.get(`/friends`, { headers: authHeaders() });
-        const pendingRes = await api.get(`/friends/requests`, { headers: authHeaders() });
-        const sentRes = await api.get(`/friends/sent`, { headers: authHeaders() });
+        // 3️⃣ Fetch friends info
+        const [friendsRes, pendingRes, sentRes] = await Promise.all([
+          api.get(`/friends`, { headers: authHeaders() }),
+          api.get(`/friends/requests`, { headers: authHeaders() }),
+          api.get(`/friends/sent`, { headers: authHeaders() }),
+        ]);
 
         setFriendsList(friendsRes.data.map(f => f.id));
-        setPendingRequests(pendingRes.data.map(r => r.sender_id)); // requests received
-        setSentRequests(sentRes.data.map(r => r.receiver_id));     // requests sent
+        setPendingRequests(pendingRes.data.map(r => r.sender_id));
+        setSentRequests(sentRes.data.map(r => r.receiver_id));
       } catch (err) {
         console.error('Failed to fetch user, posts, or friends', err);
       } finally {
@@ -123,7 +122,7 @@ export default function UserFeed({ user, authHeaders }) {
   function normalizePost(post, fallbackUserProfile) {
     return {
       ...post,
-      image_url: post.image_url ?? null,  // ✅ add this
+      image_url: post.image_url ?? null,
       likes_count: post.likes_count ?? 0,
       views_count: post.views_count ?? 0,
       comments_count: post.comments_count ?? 0,
@@ -172,9 +171,19 @@ export default function UserFeed({ user, authHeaders }) {
   }
 
   // ---------------- Render ----------------
+  if (loading) return <h2>Loading user profile...</h2>;
+
+  if (!canView)
+    return (
+      <div style={{ textAlign: 'center', marginTop: 40 }}>
+        <h2>🔒 This account is private</h2>
+        <p>You must be friends or approved to view their posts.</p>
+      </div>
+    );
+
   return (
     <div>
-      <h2>User Posts {loading && '— loading...'}</h2>
+      <h2>{userProfile?.username || 'User'}’s Posts</h2>
       {!loading && posts.length === 0 && <div>No posts yet.</div>}
       {posts.map(p => (
         <PostItem
@@ -183,12 +192,10 @@ export default function UserFeed({ user, authHeaders }) {
           user={user}
           authHeaders={authHeaders}
           toggleFollow={toggleFollow}
-          friendsList={friendsList}          
-          pendingRequests={pendingRequests}  
-          sentRequests={sentRequests}       // ✅ pass sent requests
-          onDelete={(postId) => {
-            setPosts(prev => prev.filter(post => post.id !== postId));
-          }} // ✅ pass delete handler
+          friendsList={friendsList}
+          pendingRequests={pendingRequests}
+          sentRequests={sentRequests}
+          onDelete={postId => setPosts(prev => prev.filter(post => post.id !== postId))}
         />
       ))}
     </div>

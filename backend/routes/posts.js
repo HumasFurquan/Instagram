@@ -154,7 +154,7 @@ router.delete('/:postId', auth, async (req, res) => {
   }
 });
 
-// ---------------- Feed (auth required, only followees + self) ----------------
+// ---------------- Feed (auth required, only followees + self + public) ----------------
 router.get('/', auth, async (req, res) => {
   try {
     const currentUserId = req.user.id;
@@ -168,6 +168,7 @@ router.get('/', auth, async (req, res) => {
          u.id AS user_id,
          u.username,
          u.profile_picture_url,
+         u.is_private,
          COUNT(DISTINCT l.id) AS likes_count,
          COUNT(DISTINCT v.id) AS views_count,
          COUNT(DISTINCT c.id) AS comments_count,
@@ -187,13 +188,24 @@ router.get('/', auth, async (req, res) => {
        LEFT JOIN hashtags h ON ph.hashtag_id = h.id
        LEFT JOIN post_mentions pm ON pm.post_id = p.id
        LEFT JOIN users mu ON pm.mentioned_user_id = mu.id
+       WHERE 
+         -- show your own posts
+         (p.user_id = ?) 
+         OR 
+         -- show posts of users you follow (even if private)
+         (EXISTS (
+           SELECT 1 FROM follows f
+           WHERE f.follower_id = ? AND f.followee_id = p.user_id
+         ))
+         OR 
+         -- show posts of public users
+         (u.is_private = 0)
        GROUP BY p.id, p.content, p.created_at, u.id, u.username, u.profile_picture_url
        ORDER BY p.created_at DESC
        LIMIT 50`,
       [currentUserId, currentUserId, currentUserId, currentUserId]
     );
 
-    // convert comma lists to arrays
     const transformed = rows.map(r => ({
       ...r,
       likes_count: Number(r.likes_count || 0),
@@ -202,7 +214,7 @@ router.get('/', auth, async (req, res) => {
       liked: Boolean(r.liked),
       is_following_author: Boolean(r.is_following_author),
       hashtags: r.hashtags ? r.hashtags.split(',') : [],
-      mentions: r.mentions ? r.mentions.split(',') : []
+      mentions: r.mentions ? r.mentions.split(',') : [],
     }));
 
     res.json(transformed);
@@ -212,12 +224,40 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get posts for a specific user
+// Get posts for a specific user (with privacy protection)
 router.get('/user/:userId', auth, async (req, res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.user.id;
 
+    // 1️⃣ Get the target user's privacy status
+    const [userRows] = await pool.query(
+      `SELECT is_private FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isPrivate = Boolean(userRows[0].is_private);
+
+    // 2️⃣ Check if the current user follows them
+    const [followRows] = await pool.query(
+      `SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?`,
+      [currentUserId, userId]
+    );
+
+    const isFollowing = followRows.length > 0;
+
+    // 3️⃣ If private and not following and not self — block access
+    if (isPrivate && !isFollowing && currentUserId != userId) {
+      return res.status(403).json({
+        error: "This user's posts are private.",
+      });
+    }
+
+    // 4️⃣ Otherwise, fetch posts normally
     const [rows] = await pool.query(
       `SELECT 
          p.id,

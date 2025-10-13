@@ -1,16 +1,18 @@
 // src/components/Feed.jsx
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import useSocket from '../hooks/useSocket';
 import PostItem from './PostItem';
 
 export default function Feed() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [friendsList, setFriendsList] = useState([]); // track friends
+  const [friendsList, setFriendsList] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeChatFriend, setActiveChatFriend] = useState(null); // friend currently chatting
+  const [activeChatFriend, setActiveChatFriend] = useState(null);
 
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -42,32 +44,40 @@ export default function Feed() {
             : p
         )
       ),
-    onNewComment: ({ postId, comment }) => {
+    onNewComment: ({ postId, comment }) =>
       setPosts(prev =>
-        prev.map(p => {
-          if (p.id !== postId) return p;
-          const updatedComments = [comment, ...(p.comments || [])];
-          return { ...p, comments: updatedComments, comments_count: (p.comments_count || 0) + 1 };
-        })
-      );
-    },
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: [comment, ...(p.comments || [])],
+                comments_count: (p.comments_count || 0) + 1,
+              }
+            : p
+        )
+      ),
     onPostViewed: ({ postId, views_count }) =>
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count } : p)),
-    onFriendAccepted: ({ userId }) => {
-      setFriendsList(prev => [...prev, userId]);
-    },
-    onFriendRemoved: ({ userId: removedFriendId }) => {
-      // remove friend from friendsList
-      setFriendsList(prev => prev.filter(id => id !== removedFriendId));
-    }
+      setPosts(prev => prev.map(p => (p.id === postId ? { ...p, views_count } : p))),
+    onFriendAccepted: ({ userId }) => setFriendsList(prev => [...prev, userId]),
+    onFriendRemoved: ({ userId: removedFriendId }) =>
+      setFriendsList(prev => prev.filter(id => id !== removedFriendId)),
   });
 
-  // ---------------- Load posts, friends & pending requests ----------------
+  // ---------------- Redirect if no token ----------------
   useEffect(() => {
+    if (!token) {
+      navigate('/login', { replace: true });
+    }
+  }, [token, navigate]);
+
+  // ---------------- Load posts, friends & requests ----------------
+  useEffect(() => {
+    if (!token) return;
     loadPosts();
     loadPendingFriendRequests();
     loadFriendsList();
     loadSentRequests();
+
     return () => observerRef.current?.disconnect();
   }, []);
 
@@ -79,6 +89,7 @@ export default function Feed() {
       setupObserver();
     } catch (err) {
       console.error('Failed to load posts', err);
+      if (err.response?.status === 401) handleUnauthorized();
     } finally {
       setLoading(false);
     }
@@ -88,10 +99,10 @@ export default function Feed() {
     if (!user) return;
     try {
       const res = await api.get('/friends/sent', { headers: authHeaders() });
-      const sentIds = res.data.map(r => r.id); // receivers of your requests
-      setSentRequests(sentIds);
+      setSentRequests(res.data.map(r => r.id));
     } catch (err) {
       console.error('Failed to load sent requests', err);
+      if (err.response?.status === 401) handleUnauthorized();
     }
   }
 
@@ -99,10 +110,10 @@ export default function Feed() {
     if (!user) return;
     try {
       const res = await api.get('/friends/requests', { headers: authHeaders() });
-      const pendingSenderIds = res.data.map(r => r.sender_id);
-      setPendingRequests(pendingSenderIds);
+      setPendingRequests(res.data.map(r => r.sender_id));
     } catch (err) {
       console.error('Failed to load pending friend requests', err);
+      if (err.response?.status === 401) handleUnauthorized();
     }
   }
 
@@ -110,13 +121,14 @@ export default function Feed() {
     if (!user) return;
     try {
       const res = await api.get('/friends', { headers: authHeaders() });
-      const friendIds = res.data.map(f => f.id);
-      setFriendsList(friendIds);
+      setFriendsList(res.data.map(f => f.id));
     } catch (err) {
       console.error('Failed to load friends list', err);
+      if (err.response?.status === 401) handleUnauthorized();
     }
   }
 
+  // ---------------- Normalize post ----------------
   function normalizePost(p) {
     return {
       ...p,
@@ -127,11 +139,11 @@ export default function Feed() {
       comments: p.comments || [],
       user_id: p.user_id,
       profile_picture_url: p.profile_picture_url || null,
-      is_following_author: p.is_following_author ?? false
+      is_following_author: p.is_following_author ?? false,
     };
   }
 
-  // ---------------- IntersectionObserver ----------------
+  // ---------------- Intersection Observer ----------------
   function setupObserver() {
     observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(entries => {
@@ -140,14 +152,20 @@ export default function Feed() {
         if (!postId) return;
         if (entry.isIntersecting && !viewedRef.current.has(postId)) {
           viewedRef.current.add(postId);
-          setPosts(prev => prev.map(p => p.id === postId ? { ...p, views_count: (p.views_count || 0) + 1 } : p));
+          setPosts(prev =>
+            prev.map(p =>
+              p.id === postId ? { ...p, views_count: (p.views_count || 0) + 1 } : p
+            )
+          );
           recordView(postId);
         }
       });
     }, { threshold: 0.5 });
 
     setTimeout(() => {
-      document.querySelectorAll('[data-post-id]').forEach(el => observerRef.current.observe(el));
+      document
+        .querySelectorAll('[data-post-id]')
+        .forEach(el => observerRef.current.observe(el));
     }, 60);
   }
 
@@ -155,9 +173,10 @@ export default function Feed() {
     if (!user || !token) return;
     try {
       await api.post(`/posts/${postId}/view`, {}, { headers: authHeaders() });
-    } catch (err) {}
+    } catch {}
   }
 
+  // ---------------- Follow toggle ----------------
   async function toggleFollow(targetUserId) {
     if (!user || !token) return alert('Please login to follow users.');
     const isCurrentlyFollowing = posts.find(p => p.user_id === targetUserId)?.is_following_author;
@@ -184,8 +203,16 @@ export default function Feed() {
             : p
         )
       );
-      alert('Could not update follow status. Please try again.');
+      if (err.response?.status === 401) handleUnauthorized();
+      else alert('Could not update follow status. Please try again.');
     }
+  }
+
+  // ---------------- Logout helper ----------------
+  function handleUnauthorized() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login', { replace: true });
   }
 
   // ---------------- Render ----------------
@@ -201,31 +228,18 @@ export default function Feed() {
             authHeaders={authHeaders}
             toggleFollow={toggleFollow}
             pendingRequests={pendingRequests}
-            friendsList={friendsList} // ✅ pass friends list to PostItem
+            friendsList={friendsList}
             sentRequests={sentRequests}
-            onSentRequest={(id) => setSentRequests(prev => [...prev, id])} // optional callback
-            onUnfriend={(friendId) => {
-              // 🔑 instantly update friends list when unfriended
-              setFriendsList(prev => prev.filter(id => id !== friendId));
-            }}
-            onDelete={(postId) => {
-              setPosts(prev => prev.filter(post => post.id !== postId));
-            }}
+            onSentRequest={(id) => setSentRequests(prev => [...prev, id])}
+            onUnfriend={(friendId) =>
+              setFriendsList(prev => prev.filter(id => id !== friendId))
+            }
+            onDelete={(postId) =>
+              setPosts(prev => prev.filter(post => post.id !== postId))
+            }
           />
         </div>
       ))}
-
-      {/* ---------------- Chat Window ---------------- */}
-      {activeChatFriend && (
-        <ChatWindow
-          friend={activeChatFriend}
-          user={user}
-          authHeaders={authHeaders}
-          socket={socket}
-          onClose={() => setActiveChatFriend(null)}
-        />
-      )}
-
     </div>
   );
 }
