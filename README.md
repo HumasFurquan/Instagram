@@ -46,15 +46,18 @@ This project demonstrates how a **real production social media app** is built, d
 
 ---
 
-## 🧠 Architecture Overview
+🧠 Architecture Overview
 
-Frontend (React + Vite)  ───▶  Backend (Node.js + Express)
-                                │
-                                ├── MySQL (Railway)
-                                ├── Cloudinary (Images & Videos)
-                                ├── Socket.IO (Real-time features)
-                                └── JWT Authentication
-
+Frontend (React + Vite)
+        |
+        |  HTTP / WebSocket
+        v
+Backend (Node.js + Express)
+        |
+        |── MySQL (Railway)
+        |── Cloudinary (Images & Videos)
+        |── Socket.IO (Real-time features)
+        └── JWT Authentication
 
 ---
 
