@@ -348,9 +348,9 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 * Tables include:
 
-   * users
+  * users
 
-posts
+  * posts
 
 comments
 
