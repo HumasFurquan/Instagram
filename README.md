@@ -71,7 +71,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 ## ✨ Features
 
-## 🔐 Authentication
+### 🔐 Authentication
 
 * JWT-based authentication
 
@@ -87,7 +87,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 * User profiles
 
-# 🖼️ Posts
+### 🖼️ Posts
 
 * Create posts with images/videos
 
@@ -97,7 +97,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 * View counts & hashtags
 
-# 💬 Real-Time (Socket.IO)
+### 💬 Real-Time (Socket.IO)
 
 * Live likes & unlikes
 
@@ -109,7 +109,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 * Voice / video call signaling (WebRTC-ready)
 
-# ☁️ Media Uploads
+### ☁️ Media Uploads
 
 * Cloudinary integration
 
