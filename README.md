@@ -46,16 +46,15 @@ This project demonstrates how a **real production social media app** is built, d
 
 ---
 
-🧠 Architecture Overview
-
-Frontend (React + Vite)  ───▶  Hate-Speech-Detection-2.0/
+## 🧠 Architecture Overview
+```
+Frontend (React + Vite)  ───▶  Backend (Node.js + Express)
                                 │
-                                ├── app.py                 # Streamlit application
-                                ├── test_model.py          # Model testing script
-                                ├── requirements.txt       # Dependencies
-                                ├── all_texts.pkl          # Autocomplete / suggestion data
-                                ├── hf_cache/              # Hugging Face cache (runtime)
-                                └── README.md              # Project documentation
+                                ├── MySQL (Railway)
+                                ├── Cloudinary (Images & Videos)
+                                ├── Socket.IO (Real-time features)
+                                └── JWT Authentication
+```
         
 
 ---
