@@ -370,6 +370,20 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ---
 
+## 🔒 CORS & Security
+
+* Strict CORS configuration
+
+* Allowed origins:
+
+  * Localhost
+
+  * Vercel frontend domain
+
+* Secure cookies (httpOnly, sameSite=none, secure=true)
+
+---
+
 ## 📦 Installation (Local Setup)
 
 ```bash
