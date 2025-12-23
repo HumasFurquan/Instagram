@@ -1,4 +1,4 @@
-# Hate Speech Detection 2.0
+# 📸 Instagram Clone (Full-Stack)
 
 [![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red?logo=pytorch)](https://pytorch.org/)
