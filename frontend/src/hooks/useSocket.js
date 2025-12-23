@@ -8,12 +8,17 @@ export default function useSocket(handlers = {}) {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+    const URL =
+    import.meta.env.VITE_SOCKET_URL ||
+    import.meta.env.VITE_API_BASE ||
+    'http://localhost:5000';
+
     const token = localStorage.getItem('token'); // <-- get token from localStorage
 
     if (!socket) {
       socket = io(URL, {
-        transports: ['websocket', 'polling'], // fallback to polling
+        withCredentials: true,        // 🔴 REQUIRED
+        transports: ['websocket'],    // 🔴 force websocket (better on Render)
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
