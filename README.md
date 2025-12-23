@@ -232,6 +232,81 @@ These solutions demonstrate practical considerations required when transitioning
 
 ---
 
+## ✨ Features
+
+### 🔐 Authentication
+
+* JWT-based authentication
+
+* Secure HTTP-only cookies
+
+* Login & signup system
+
+### 🧑‍🤝‍🧑 Social Features
+
+* Follow / Unfollow users
+
+* Friend system
+
+* User profiles
+
+### 🖼️ Posts
+
+* Create posts with images/videos
+
+* Like & unlike posts (real-time)
+
+* Comment on posts (real-time)
+
+* View counts & hashtags
+
+### 💬 Real-Time (Socket.IO)
+
+* Live likes & unlikes
+
+* Live comments
+
+* Follow updates
+
+* Chat system
+
+* Voice / video call signaling (WebRTC-ready)
+
+### ☁️ Media Uploads
+
+* Cloudinary integration
+
+* Optimized image & video storage
+
+---
+
+## 📁 Project Structure
+
+```
+Instagram/
+│
+├── backend/
+│   ├── controllers/
+│   ├── routes/
+│   ├── middleware/
+│   ├── utils/
+│   ├── config/
+│   ├── index.js
+│   └── init.sql
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── services/
+│   ├── public/
+│   └── vite.config.js
+│
+└── README.md
+
+```
+
 ## 📦 Installation (Local Setup)
 
 ```bash
