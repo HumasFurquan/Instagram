@@ -155,17 +155,43 @@ These solutions demonstrate practical considerations required when transitioning
 
 ---
 
-## 🖥️ Tech Stack
+## 🛠️ Tech Stack
 
-| Layer         | Technology                |
-| ------------- | ------------------------- |
-| Language      | Python                    |
-| ML Framework  | PyTorch                   |
-| NLP           | Hugging Face Transformers |
-| UI            | Streamlit                 |
-| Visualization | Matplotlib                |
-| Model Hosting | Hugging Face Hub          |
-| Deployment    | Streamlit Cloud           |
+## Frontend
+
+* React (Vite)
+
+* React Router
+
+* Axios
+
+* Socket.IO Client
+
+* CSS / Custom UI
+
+## Backend
+
+* Node.js
+
+* Express.js
+
+* MySQL (mysql2)
+
+* Socket.IO
+
+* JWT Authentication
+
+* Multer
+* Cloudinary SDK
+
+## Database & Services
+
+*MySQL – Railway
+
+*Media Storage – Cloudinary
+
+*Backend Hosting – Render
+*Frontend Hosting – Vercel
 
 ---
 
