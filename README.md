@@ -384,6 +384,38 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ---
 
+## 📦 Deployment Strategy (Real-World)
+
+| Layer     | Platform           |
+|----------|--------------------|
+| Frontend | Vercel             |
+| Backend  | Render             |
+| Database | Railway (MySQL)    |
+| Media    | Cloudinary         |
+| Realtime | Socket.IO          |
+
+> This setup mirrors how **real startups** deploy social platforms.
+
+---
+
+## 🧪 Production Checklist
+
+* ✅ Backend live
+
+* ✅ Frontend live
+
+* ✅ MySQL connected
+
+* ✅ Cloudinary uploads
+
+* ✅ Socket.IO real-time updates
+
+* ✅ Auth cookies working
+
+* ✅ Page refresh routing fixed
+
+---
+
 ## 📦 Installation (Local Setup)
 
 ```bash
