@@ -12,12 +12,12 @@ A **full-stack Instagram clone** built with **React (Vite), Node.js + Express, M
 
 This project demonstrates how a **real production social media app** is built, deployed, and scaled using modern tools.
 
-🚀 **Live Demo**: [https://hatexspeechxdetectionx2x0.streamlit.app/](https://hatexspeechxdetectionx2x0.streamlit.app/)
+🚀 **Live Demo**
 
-Frontend (Vercel)
+# **Frontend (Vercel)**
 👉 [https://instagram-frontend-kohl.vercel.app](https://instagram-frontend-kohl.vercel.app/)
 
-Backend API (Render)
+* **Backend API (Render)**
 👉 [https://instagram-9au5.onrender.com](https://instagram-9au5.onrender.com/)
 
 ---
