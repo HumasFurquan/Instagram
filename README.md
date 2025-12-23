@@ -313,6 +313,7 @@ Instagram/
 
 ### Backend (backend/.env)
 
+```
 PORT=5000
 
 DB_HOST=your_railway_host
@@ -328,11 +329,14 @@ CLOUDINARY_API_KEY=xxxx
 CLOUDINARY_API_SECRET=xxxx
 
 CLIENT_URL=https://instagram-frontend-kohl.vercel.app
+```
 
 ### Frontend (Vercel Environment Variables)
 
+```
 VITE_API_BASE=https://instagram-9au5.onrender.com
 VITE_SOCKET_URL=https://instagram-9au5.onrender.com
+```
 
 ---
 
