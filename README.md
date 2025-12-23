@@ -182,16 +182,18 @@ These solutions demonstrate practical considerations required when transitioning
 * JWT Authentication
 
 * Multer
+ 
 * Cloudinary SDK
 
 ## Database & Services
 
-*MySQL – Railway
+* MySQL – Railway
 
-*Media Storage – Cloudinary
+* Media Storage – Cloudinary
 
-*Backend Hosting – Render
-*Frontend Hosting – Vercel
+* Backend Hosting – Render
+ 
+* Frontend Hosting – Vercel
 
 ---
 
