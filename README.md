@@ -71,7 +71,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 ## ✨ Features
 
-# 🔐 Authentication
+## 🔐 Authentication
 
 * JWT-based authentication
 
@@ -79,7 +79,7 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 * Login & signup system
 
-# 🧑‍🤝‍🧑 Social Features
+### 🧑‍🤝‍🧑 Social Features
 
 * Follow / Unfollow users
 
