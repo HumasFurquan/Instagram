@@ -69,16 +69,51 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 ---
 
-## 🧠 Key Features
+## ✨ Features
 
-* ✅ Transformer-based hate speech classification (BERT-family model)
-* ✅ Model hosted on **Hugging Face Hub** to handle large file sizes
-* ✅ Live inference using **Streamlit**
-* ✅ GPU/CPU auto-detection
-* ✅ Session-based input history
-* ✅ Confidence visualization
-* ✅ Modular and extensible codebase
-* ✅ Production-friendly deployment setup
+# 🔐 Authentication
+
+* JWT-based authentication
+
+* Secure HTTP-only cookies
+
+* Login & signup system
+
+# 🧑‍🤝‍🧑 Social Features
+
+* Follow / Unfollow users
+
+* Friend system
+
+* User profiles
+
+# 🖼️ Posts
+
+* Create posts with images/videos
+
+* Like & unlike posts (real-time)
+
+* Comment on posts (real-time)
+
+* View counts & hashtags
+
+# 💬 Real-Time (Socket.IO)
+
+* Live likes & unlikes
+
+* Live comments
+
+* Follow updates
+
+* Chat system
+
+* Voice / video call signaling (WebRTC-ready)
+
+# ☁️ Media Uploads
+
+* Cloudinary integration
+
+* Optimized image & video storage
 
 ---
 
