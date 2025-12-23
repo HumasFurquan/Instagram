@@ -15,11 +15,9 @@ This project demonstrates how a **real production social media app** is built, d
 🚀 **Live Demo**
 
 * **Frontend (Vercel)**
-
 👉 [https://instagram-frontend-kohl.vercel.app](https://instagram-frontend-kohl.vercel.app/)
 
 * **Backend API (Render)**
-
 👉 [https://instagram-9au5.onrender.com](https://instagram-9au5.onrender.com/)
 
 ---
