@@ -47,6 +47,13 @@ app.use(
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({
+    status: "OK",
+    message: "Instagram Backend is running 🚀"
+  });
+});
+
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
