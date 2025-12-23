@@ -21,30 +21,38 @@ const httpServer = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://instagram-frontend-kohl.vercel.app',
   'https://frozenapple.vercel.app',
   'https://frozenapple.netlify.app'
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error(`CORS not allowed for ${origin}`), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (!allowedOrigins.includes(origin)) {
+        return callback(
+          new Error(`CORS not allowed for ${origin}`),
+          false
+        );
+      }
+
+      return callback(null, true);
+    },
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(express.json());
 
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST", "DELETE"],
-    credentials: true
-  }
+    methods: ['GET', 'POST', 'DELETE'],
+    credentials: true,
+  },
 });
 
 // attach io to app so routes can emit: req.app.get('io')
