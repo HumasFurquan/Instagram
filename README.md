@@ -317,10 +317,10 @@ Instagram/
 PORT=5000
 
 DB_HOST=your_railway_host
-DB_PORT=23444
+DB_PORT=12345
 DB_USER=root
 DB_PASSWORD=your_password
-DB_NAME=instagram_clone
+DB_NAME=your_db_name
 
 JWT_SECRET=your_secret_key
 
@@ -337,6 +337,36 @@ CLIENT_URL=https://instagram-frontend-kohl.vercel.app
 VITE_API_BASE=https://instagram-9au5.onrender.com
 VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 ```
+
+---
+
+## 🗄️ Database
+
+* MySQL hosted on Railway
+
+* Schema initialized via init.sql
+
+* Tables include:
+
+   * users
+
+posts
+
+comments
+
+likes
+
+follows
+
+messages
+
+calls
+
+hashtags
+
+events
+
+friend_requests
 
 ---
 
