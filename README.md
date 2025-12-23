@@ -508,17 +508,14 @@ These limitations are common in supervised NLP systems and can be mitigated thro
 ## 👨‍💻 Author
 
 **Humas Furquan**
-ML & Frontend Developer
-GitHub: [https://github.com/HumasFurquan](https://github.com/HumasFurquan)
+
+* GitHub: [https://github.com/HumasFurquan](https://github.com/HumasFurquan)
+* LinkedIn: [https://www.linkedin.com/in/humas-furquan-7b2961216](https://www.linkedin.com/in/humas-furquan-7b2961216)
 
 ---
 
-## ⭐ Acknowledgements
+## 📄 License
 
-* Hugging Face 🤗
-* Streamlit
-* Open-source NLP community
-
----
+This project is licensed under the **MIT** License.
 
 > If you find this project useful, consider giving it a ⭐ on GitHub.
