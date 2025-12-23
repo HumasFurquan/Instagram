@@ -352,21 +352,21 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
   * posts
 
-comments
+  * comments
 
-likes
+  * likes
 
-follows
+  * follows
 
-messages
+  * messages
 
-calls
+  * calls
 
-hashtags
+  * hashtags
 
-events
+  * events
 
-friend_requests
+  * friend_requests
 
 ---
 
