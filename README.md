@@ -46,15 +46,15 @@ This project demonstrates how a **real production social media app** is built, d
 
 ---
 
-## 🚀 Project Overview
+## 🧠 Architecture Overview
 
-**Hate Speech Detection 2.0** is designed to classify user-provided text into hate-related categories while providing **model interpretability** and a clean, interactive UI. The project focuses on scalability, reproducibility, and real-world deployment constraints (large model size, cloud storage, inference latency).
+Frontend (React + Vite)  ───▶  Backend (Node.js + Express)
+                                │
+                                ├── MySQL (Railway)
+                                ├── Cloudinary (Images & Videos)
+                                ├── Socket.IO (Real-time features)
+                                └── JWT Authentication
 
-This project is suitable for:
-
-* NLP / ML Engineers
-* Data Scientists
-* Researchers working on toxic language, moderation, or social media analysis
 
 ---
 
