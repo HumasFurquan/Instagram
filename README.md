@@ -265,14 +265,28 @@ streamlit run app.py
 ## 📁 Project Structure
 
 ```
-Hate-Speech-Detection-2.0/
+Instagram/
 │
-├── app.py                 # Streamlit application
-├── test_model.py          # Model testing script
-├── requirements.txt       # Dependencies
-├── all_texts.pkl          # Autocomplete / suggestion data
-├── hf_cache/              # Hugging Face cache (runtime)
-└── README.md              # Project documentation
+├── backend/
+│   ├── controllers/
+│   ├── routes/
+│   ├── middleware/
+│   ├── utils/
+│   ├── config/
+│   ├── index.js
+│   └── init.sql
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── services/
+│   ├── public/
+│   └── vite.config.js
+│
+└── README.md
+
 ```
 
 ---
