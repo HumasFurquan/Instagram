@@ -133,12 +133,15 @@ This project went through multiple real-world iterations:
 
 During the development and deployment of this project, several real-world engineering challenges were identified and resolved:
 
-- **GitHub file size limitations:** The trained Transformer model exceeded GitHub’s file size limits, making direct storage in the repository impractical.
-- **Model storage solution:** The model was hosted on **Hugging Face Hub**, enabling versioned, scalable, and industry-standard model distribution.
-- **Dynamic model loading in Streamlit:** Implemented runtime model loading with proper handling of CPU/GPU availability to ensure smooth deployment.
-- **Cache handling:** Configured Hugging Face cache management to avoid repeated downloads and ensure consistent behavior across local and cloud environments.
+CORS + cookies across Render ↔ Vercel
 
-These solutions demonstrate practical considerations required when transitioning from experimentation to production-ready machine learning applications.
+Socket.IO auth in production
+
+Page reload 404 issue on Vercel
+
+MySQL deployment + schema init on Railway
+
+Real-time likes/comments sync without refresh
 
 ---
 
@@ -379,11 +382,9 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ## 🔒 Limitations
 
-* Model performance depends on dataset bias
-* English-language focused
-* Not a replacement for human moderation
-
-These limitations are common in supervised NLP systems and can be mitigated through dataset expansion, multilingual training, and continual learning with real-world feedback.
+- No push notifications yet
+- No infinite scroll optimization
+- Not horizontally scaled (single Socket.IO instance)
 
 ---
 
