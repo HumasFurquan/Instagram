@@ -22,19 +22,91 @@ This project demonstrates how a **real production social media app** is built, d
 
 ---
 
-## 🎥 Project Demo
-
-![Project Demo](assets/demo.gif)
-
----
-
 ## 📸 Screenshots
 
-### 🏠 Interface & Input (Home Page & Text Suggestions)
+Below are screenshots of the Instagram Clone showcasing authentication, feed, real-time interactions, messaging, calls, friendships, and mobile responsiveness.
 
-| Home Page | Text Suggestions |
-|-----------|------------------|
-| ![](assets/home.jpg) | ![](assets/suggestions.jpg) |
+🔐 Authentication
+
+| Signup / Login              |
+| --------------------------- |
+| ![](assets/web/01_auth.jpg) |
+
+
+🏠 Feed & Posting
+
+| Feed                        | Create Post                        |
+| --------------------------- | ---------------------------------- |
+| ![](assets/web/02_feed.jpg) | ![](assets/web/03_create_post.jpg) |
+
+
+❤️ Post Engagement
+
+| Engagement Details                     |
+| -------------------------------------- |
+| ![](assets/web/04_post_engagement.jpg) |
+
+
+🔍 User Discovery
+
+| Username Suggestions               |
+| ---------------------------------- |
+| ![](assets/web/05_user_search.jpg) |
+
+
+👤 User Profile & Social Actions
+
+| User Profile                        | Social Actions                    |
+| ----------------------------------- | --------------------------------- |
+| ![](assets/web/06_user_profile.jpg) | ![](assets/web/14_add_friend.jpg) |
+
+
+🤝 Friends & Requests
+
+| Request Sent                        | Request Received                        |
+| ----------------------------------- | --------------------------------------- |
+| ![](assets/web/15_request_sent.jpg) | ![](assets/web/16_request_received.jpg) |
+
+
+🧑‍🤝‍🧑 Friends List
+
+| Friends List                        |
+| ----------------------------------- |
+| ![](assets/web/13_friends_list.jpg) |
+
+
+💬 Real-Time Messaging
+
+| Chat Window                 |
+| --------------------------- |
+| ![](assets/web/08_chat.jpg) |
+
+
+🔄 Real-Time Sync (Two Devices)
+
+| Device A                             | Device B                             |
+| ------------------------------------ | ------------------------------------ |
+| ![](assets/web/09_chat_device_1.jpg) | ![](assets/web/09_chat_device_2.jpg) |
+
+
+📞 Voice Call Flow
+| Incoming Call                        | Active Call                        |
+| ------------------------------------ | ---------------------------------- |
+| ![](assets/web/10_call_incoming.jpg) | ![](assets/web/11_call_active.jpg) |
+
+⚙️ Settings
+| Settings                        |
+| ------------------------------- |
+| ![](assets/web/12_settings.jpg) |
+
+📱 Mobile Responsiveness
+
+| Feed (Mobile)                         | Chat (Mobile)                         |
+| ------------------------------------- | ------------------------------------- |
+| ![](assets/mobile/18_feed_mobile.jpg) | ![](assets/mobile/19_chat_mobile.jpg) |
+
+
+
 
 ---
 
