@@ -375,10 +375,10 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ## 🎯 Use Cases
 
-* Social media moderation
-* Toxic content filtering
-* Research on online hate speech
-* NLP model deployment demonstration
+- Social media platforms with real-time interactions
+- Instagram-like photo/video sharing apps
+- Chat-enabled web applications
+- Learning reference for full-stack + Socket.IO projects
 
 ---
 
