@@ -117,15 +117,15 @@ This project aims to address these challenges by leveraging **Transformer-based 
 
 ---
 
-## 🧪 Training Journey & Optimization
+## 🧪 Engineering Journey & Optimization
 
-This project went through multiple iterations:
+This project went through multiple real-world iterations:
 
-- **First attempt:** Model training was performed on CPU, taking approximately **7 hours**, highlighting the limitations of local CPU-based training for large Transformer models.
-- **Second attempt:** Training was interrupted due to session termination, resulting in loss of in-memory variables and requiring a full restart.
-- **Final iteration:** The model was successfully trained using **GPU acceleration**, reducing training time to **~26 minutes** and significantly improving development efficiency.
-
-These iterations reflect real-world ML challenges such as resource constraints, session management, and the importance of hardware acceleration.
+- Initial backend faced CORS and cookie issues in production
+- Solved cross-origin authentication using `sameSite=none` and secure cookies
+- Optimized Socket.IO connections to avoid duplicate listeners on re-render
+- Fixed page refresh routing issues on Vercel using SPA rewrite rules
+- Improved MySQL query performance using proper indexing
 
 ---
 
