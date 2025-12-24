@@ -61,11 +61,17 @@ Frontend (React + Vite)  ───▶  Backend (Node.js + Express)
 
 ## ❓ Problem Statement
 
-The rapid growth of user-generated content on social media and online platforms has led to a significant increase in **toxic, abusive, and hate-based language**. Manually moderating such content is **time-consuming, expensive, and not scalable**, especially at the scale of millions of daily posts.
+Modern social media platforms require **real-time interactions, scalable architectures**, and **secure authentication** to deliver a smooth user experience. Features like instant likes, comments, follows, and messaging are no longer optional — they are user expectations.
 
-Traditional rule-based systems fail to capture contextual and semantic nuances of language, leading to high false positives and negatives. As a result, there is a strong need for **machine learning–based solutions** that can automatically detect hate speech with high accuracy while being deployable in real-world systems.
+Building such systems presents several challenges:
 
-This project aims to address these challenges by leveraging **Transformer-based NLP models** to perform reliable hate speech detection and demonstrate how such models can be trained, hosted, and deployed in production environments.
+- Maintaining **real-time consistency** across users
+- Handling **authentication securely** across different domains
+- Managing **media uploads** efficiently
+- Ensuring **page reload routing** works correctly in SPA deployments
+- Deploying and connecting **frontend, backend, and database** services reliably in production
+
+This project aims to solve these challenges by designing and implementing a **production-ready Instagram-like social media application** using modern full-stack technologies, demonstrating how real-world social platforms are built, deployed, and maintained.
 
 ---
 
