@@ -430,6 +430,6 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ## 📄 License
 
-This project is licensed under the **MIT** License.
+This project is licensed under the [MIT License](LICENSE).
 
 > If you find this project useful, consider giving it a ⭐ on GitHub.
