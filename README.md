@@ -82,13 +82,6 @@ Below are screenshots of the Instagram Clone showcasing authentication, feed, re
 | ![](assets/web/08_chat.jpg) |
 
 
-🔄 Real-Time Sync (Two Devices)
-
-| Device A                             | Device B                             |
-| ------------------------------------ | ------------------------------------ |
-| ![](assets/web/09_chat_device_1.jpg) | ![](assets/web/09_chat_device_2.jpg) |
-
-
 📞 Voice Call Flow
 | Incoming Call                        | Active Call                        |
 | ------------------------------------ | ---------------------------------- |
