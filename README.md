@@ -390,12 +390,8 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ## 📈 Future Improvements
 
-* Multi-class hate category breakdown
-* SHAP / attention-based explainability UI
-* Multi-language support
-* REST API (FastAPI backend)
-* User feedback loop for model retraining
-* Database-backed history instead of session state
+- Notifications system
+- Story feature
 
 ---
 
