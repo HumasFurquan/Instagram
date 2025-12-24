@@ -12,8 +12,6 @@
 [![Render](https://img.shields.io/badge/Render-Backend-purple?logo=render)](https://render.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A **production-ready NLP web application** for detecting and explaining hate speech using a fine-tuned Transformer model. This project demonstrates an **end-to-end ML pipeline** — from dataset handling and model training to cloud model hosting (Hugging Face) and live deployment (Streamlit).
-
 A **full-stack Instagram clone** built with **React (Vite), Node.js + Express, MySQL**, and **Socket.IO**, featuring real-time likes, comments, follows, chat, and voice/video call signaling.
 
 This project demonstrates how a **real production social media app** is built, deployed, and scaled using modern tools.
