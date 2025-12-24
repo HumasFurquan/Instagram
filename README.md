@@ -193,7 +193,7 @@ This project aims to solve these challenges by designing and implementing a **pr
 
 ---
 
-## 🧪 Engineering Journey & Optimization
+## 🧪 Engineering Decisions & Optimization
 
 This project went through multiple real-world iterations:
 
