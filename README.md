@@ -133,15 +133,11 @@ This project went through multiple real-world iterations:
 
 During the development and deployment of this project, several real-world engineering challenges were identified and resolved:
 
-CORS + cookies across Render ↔ Vercel
-
-Socket.IO auth in production
-
-Page reload 404 issue on Vercel
-
-MySQL deployment + schema init on Railway
-
-Real-time likes/comments sync without refresh
+- CORS + cookies across Render ↔ Vercel
+- Socket.IO auth in production
+- Page reload 404 issue on Vercel
+- MySQL deployment + schema init on Railway
+- Real-time likes/comments sync without refresh
 
 ---
 
