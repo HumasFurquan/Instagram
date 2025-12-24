@@ -105,17 +105,6 @@ Below are screenshots of the Instagram Clone showcasing authentication, feed, re
 | ------------------------------------- | ------------------------------------- |
 | ![](assets/mobile/18_feed_mobile.jpg) | ![](assets/mobile/19_chat_mobile.jpg) |
 
-
-
-
----
-
-### 📊 Prediction Results
-
-| Result 1 | Result 2 | Result 3 |
-|----------|----------|----------|
-| ![](assets/prediction_1.jpg) | ![](assets/prediction_2.jpg) | ![](assets/prediction_3.jpg) |
-
 ---
 
 ## 🧠 Architecture Overview
