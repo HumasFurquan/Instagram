@@ -26,6 +26,16 @@ This project demonstrates how a **real production social media app** is built, d
 
 ---
 
+## 🌟 Key Highlights
+
+- Real-time likes, comments, chat, and calls using Socket.IO
+- Secure JWT authentication with cross-origin cookies
+- Production deployment on Vercel, Render, Railway, and Cloudinary
+- Mobile-responsive UI with full feature parity
+- Clean architecture with scalable backend design
+
+---
+
 ## 📸 Screenshots
 
 Below are screenshots of the Instagram Clone showcasing authentication, feed, real-time interactions, messaging, calls, friendships, and mobile responsiveness.
@@ -91,10 +101,12 @@ Below are screenshots of the Instagram Clone showcasing authentication, feed, re
 | ------------------------------------ | ---------------------------------- |
 | ![](assets/web/10_call_incoming.jpg) | ![](assets/web/11_call_active.jpg) |
 
+
 ⚙️ Settings
 | Settings                        |
 | ------------------------------- |
 | ![](assets/web/12_settings.jpg) |
+
 
 📱 Mobile Responsiveness
 
@@ -244,54 +256,6 @@ During the development and deployment of this project, several real-world engine
 * Backend Hosting – Render
  
 * Frontend Hosting – Vercel
-
----
-
-## ✨ Features
-
-### 🔐 Authentication
-
-* JWT-based authentication
-
-* Secure HTTP-only cookies
-
-* Login & signup system
-
-### 🧑‍🤝‍🧑 Social Features
-
-* Follow / Unfollow users
-
-* Friend system
-
-* User profiles
-
-### 🖼️ Posts
-
-* Create posts with images/videos
-
-* Like & unlike posts (real-time)
-
-* Comment on posts (real-time)
-
-* View counts & hashtags
-
-### 💬 Real-Time (Socket.IO)
-
-* Live likes & unlikes
-
-* Live comments
-
-* Follow updates
-
-* Chat system
-
-* Voice / video call signaling (WebRTC-ready)
-
-### ☁️ Media Uploads
-
-* Cloudinary integration
-
-* Optimized image & video storage
 
 ---
 
