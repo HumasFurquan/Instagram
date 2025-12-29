@@ -60,24 +60,36 @@ export default function App() {
   return (
     <Router>
       {token && <Navbar user={user} authHeaders={authHeaders} onLogout={logout} onUpdateUser={updateUser} />}
-      <div style={{ marginLeft: token ? 100 : 0, maxWidth: token ? 600 : '100%', padding: 16 }}>
-        <h1>Instagram-lite</h1>
-
-        {!token ? (
+      {!token ? (
+        <div style={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          width: '100%',
+          padding: '20px',
+          margin: 0,
+          boxSizing: 'border-box'
+        }}>
+          <h1 style={{ marginBottom: '32px', textAlign: 'center', margin: 0 }}>Instagram-lite</h1>
           <div style={{ 
             display: 'flex', 
             gap: '24px', 
             justifyContent: 'center', 
             flexWrap: 'wrap',
             alignItems: 'flex-start',
-            padding: '20px 0',
-            width: '100%'
+            width: '100%',
+            maxWidth: '800px'
           }}>
             <Signup onAuth={handleAuth} />
             <Login onAuth={handleAuth} />
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div style={{ marginLeft: 100, maxWidth: 600, padding: 16 }}>
           <>
+            <h1>Instagram-lite</h1>
             <SearchBar />
             <Routes>
               <Route 
@@ -108,8 +120,8 @@ export default function App() {
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </>
-        )}
-      </div>
+        </div>
+      )}
     </Router>
   );
 }
