@@ -13,6 +13,7 @@ import ChatWindow from './components/ChatWindow';
 import useSocket from './hooks/useSocket';
 import api from './api';
 import Settings from './components/Settings';
+import './components/AuthPage.css';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -61,29 +62,37 @@ export default function App() {
     <Router>
       {token && <Navbar user={user} authHeaders={authHeaders} onLogout={logout} onUpdateUser={updateUser} />}
       {!token ? (
-        <div style={{ 
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          width: '100%',
-          padding: '20px',
-          margin: 0,
-          boxSizing: 'border-box'
-        }}>
-          <h1 style={{ marginBottom: '32px', textAlign: 'center', margin: 0 }}>Instagram-lite</h1>
-          <div style={{ 
-            display: 'flex', 
-            gap: '24px', 
-            justifyContent: 'center', 
-            flexWrap: 'wrap',
-            alignItems: 'flex-start',
-            width: '100%',
-            maxWidth: '800px'
-          }}>
-            <Signup onAuth={handleAuth} />
-            <Login onAuth={handleAuth} />
+        <div className="auth-page-container">
+          {/* Animated Side Elements */}
+          <div className="auth-side-element left"></div>
+          <div className="auth-side-element right"></div>
+          <div className="auth-side-element left-small"></div>
+          <div className="auth-side-element right-small"></div>
+          
+          {/* Floating Icons */}
+          <div className="auth-icon heart">❤️</div>
+          <div className="auth-icon star">⭐</div>
+          <div className="auth-icon camera">📷</div>
+          <div className="auth-icon like">👍</div>
+          
+          {/* Gradient Orbs */}
+          <div className="auth-orb orb-1"></div>
+          <div className="auth-orb orb-2"></div>
+          
+          {/* Particles */}
+          <div className="auth-particle"></div>
+          <div className="auth-particle"></div>
+          <div className="auth-particle"></div>
+          <div className="auth-particle"></div>
+          
+          <div className="auth-title-container">
+            <h1 className="auth-title">Instagram-lite</h1>
+          </div>
+          <div className="auth-content-wrapper">
+            <div className="auth-forms-container">
+              <Signup onAuth={handleAuth} />
+              <Login onAuth={handleAuth} />
+            </div>
           </div>
         </div>
       ) : (
