@@ -60,15 +60,22 @@ export default function App() {
   return (
     <Router>
       {token && <Navbar user={user} authHeaders={authHeaders} onLogout={logout} onUpdateUser={updateUser} />}
-      <div style={{ marginLeft: token ? 100 : 0, maxWidth: 600, padding: 16 }}>
+      <div style={{ marginLeft: token ? 100 : 0, maxWidth: token ? 600 : '100%', padding: 16 }}>
         <h1>Instagram-lite</h1>
 
         {!token ? (
-          <>
+          <div style={{ 
+            display: 'flex', 
+            gap: '24px', 
+            justifyContent: 'center', 
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            padding: '20px 0',
+            width: '100%'
+          }}>
             <Signup onAuth={handleAuth} />
-            <hr />
             <Login onAuth={handleAuth} />
-          </>
+          </div>
         ) : (
           <>
             <SearchBar />

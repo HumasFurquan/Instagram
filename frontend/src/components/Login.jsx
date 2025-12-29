@@ -25,14 +25,12 @@ export default function Login({onAuth}) {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h2 className="login-title">Welcome Back</h2>
-          <p className="login-subtitle">Sign in to continue to your account</p>
-        </div>
-        
-        <form className="login-form" onSubmit={submit}>
+    <div className="login-card">
+      <div className="login-header">
+        <h2 className="login-title">Login</h2>
+      </div>
+      
+      <form className="login-form" onSubmit={submit}>
           <div className="form-group">
             <input
               className="login-input"
@@ -81,7 +79,6 @@ export default function Login({onAuth}) {
             )}
           </button>
         </form>
-      </div>
     </div>
   );
 }

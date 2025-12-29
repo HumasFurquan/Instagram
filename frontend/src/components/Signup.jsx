@@ -24,14 +24,12 @@ export default function Signup({onAuth}) {
   };
 
   return (
-    <div className="signup-container">
-      <div className="signup-card">
-        <div className="signup-header">
-          <h2 className="signup-title">Create Account</h2>
-          <p className="signup-subtitle">Sign up to get started with your account</p>
-        </div>
-        
-        <form className="signup-form" onSubmit={submit}>
+    <div className="signup-card">
+      <div className="signup-header">
+        <h2 className="signup-title">Signup</h2>
+      </div>
+      
+      <form className="signup-form" onSubmit={submit}>
           <div className="form-group">
             <input
               className="signup-input"
@@ -93,7 +91,6 @@ export default function Signup({onAuth}) {
             )}
           </button>
         </form>
-      </div>
     </div>
   );
 }

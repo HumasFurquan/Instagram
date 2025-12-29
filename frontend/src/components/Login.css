@@ -1,52 +1,15 @@
 /* Login Component - Modern Instagram-inspired Design */
 
-.login-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.login-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: float 20s infinite linear;
-  pointer-events: none;
-}
-
-@keyframes float {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(50px, 50px);
-  }
-}
-
 .login-card {
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 
-              0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 
+              0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 24px;
   width: 100%;
-  max-width: 400px;
+  max-width: 350px;
   position: relative;
-  z-index: 1;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .login-card:hover {
@@ -57,15 +20,15 @@
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .login-title {
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-size: 1.5rem;
   font-weight: 600;
   color: #262626;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  margin: 0;
+  letter-spacing: -0.3px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -82,7 +45,7 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-group {
@@ -93,10 +56,10 @@
 
 .login-input {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 1rem;
+  padding: 10px 12px;
+  font-size: 0.95rem;
   border: 1.5px solid #dbdbdb;
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: #fafafa;
   color: #262626;
   transition: all 0.2s ease;
@@ -122,19 +85,19 @@
 
 .login-button {
   width: 100%;
-  padding: 14px 24px;
-  font-size: 1rem;
+  padding: 10px 20px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #ffffff;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 8px;
+  transition: all 0.2s ease;
+  margin-top: 4px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
 .login-button::before {
@@ -153,8 +116,8 @@
 }
 
 .login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
 }
 
 .login-button:active {
@@ -176,14 +139,14 @@
 .error-message {
   background-color: #fee;
   color: #c33;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 4px;
   border: 1px solid #fcc;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   animation: slideDown 0.3s ease;
 }
 
@@ -245,45 +208,33 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .login-container {
-    padding: 16px;
-    min-height: auto;
-    padding-top: 40px;
-    padding-bottom: 40px;
-  }
-
   .login-card {
-    padding: 32px 24px;
-    border-radius: 12px;
+    padding: 20px;
+    max-width: 100%;
   }
 
   .login-title {
-    font-size: 1.75rem;
+    font-size: 1.35rem;
   }
 
   .login-input {
-    padding: 12px 14px;
-    font-size: 0.95rem;
+    padding: 9px 11px;
+    font-size: 0.9rem;
   }
 
   .login-button {
-    padding: 12px 20px;
-    font-size: 0.95rem;
+    padding: 9px 18px;
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
   .login-card {
-    padding: 24px 20px;
-    max-width: 100%;
+    padding: 18px;
   }
 
   .login-title {
-    font-size: 1.5rem;
-  }
-
-  .login-subtitle {
-    font-size: 0.85rem;
+    font-size: 1.25rem;
   }
 }
 
@@ -341,10 +292,6 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .login-container::before {
-    animation: none;
-  }
-
   .login-card,
   .login-button,
   .login-input {
