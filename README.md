@@ -1,12 +1,16 @@
 # 📸 Instagram Clone (Full-Stack)
 
-[![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red?logo=pytorch)](https://pytorch.org/)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Transformers-yellow?logo=huggingface)](https://huggingface.co/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-Web%20App-FF4B4B?logo=streamlit)](https://streamlit.io/)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-Build%20Tool-purple?logo=vite)](https://vitejs.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-Backend-green?logo=node.js)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express.js-Framework-black?logo=express)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-blue?logo=mysql)](https://www.mysql.com/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-Realtime-black?logo=socket.io)](https://socket.io/)
+[![JWT](https://img.shields.io/badge/JWT-Authentication-orange?logo=jsonwebtokens)](https://jwt.io/)
+[![Cloudinary](https://img.shields.io/badge/Cloudinary-Media-blue?logo=cloudinary)](https://cloudinary.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-Frontend-black?logo=vercel)](https://vercel.com/)
+[![Render](https://img.shields.io/badge/Render-Backend-purple?logo=render)](https://render.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-A **production-ready NLP web application** for detecting and explaining hate speech using a fine-tuned Transformer model. This project demonstrates an **end-to-end ML pipeline** — from dataset handling and model training to cloud model hosting (Hugging Face) and live deployment (Streamlit).
 
 A **full-stack Instagram clone** built with **React (Vite), Node.js + Express, MySQL**, and **Socket.IO**, featuring real-time likes, comments, follows, chat, and voice/video call signaling.
 
@@ -19,6 +23,16 @@ This project demonstrates how a **real production social media app** is built, d
 
 * **Backend API (Render)**
 👉 [https://instagram-9au5.onrender.com](https://instagram-9au5.onrender.com/)
+
+---
+
+## 🌟 Key Highlights
+
+- Real-time likes, comments, chat, and calls using Socket.IO
+- Secure JWT authentication with cross-origin cookies
+- Production deployment on Vercel, Render, Railway, and Cloudinary
+- Mobile-responsive UI with full feature parity
+- Clean architecture with scalable backend design
 
 ---
 
@@ -82,22 +96,17 @@ Below are screenshots of the Instagram Clone showcasing authentication, feed, re
 | ![](assets/web/08_chat.jpg) |
 
 
-🔄 Real-Time Sync (Two Devices)
-
-| Device A                             | Device B                             |
-| ------------------------------------ | ------------------------------------ |
-| ![](assets/web/09_chat_device_1.jpg) | ![](assets/web/09_chat_device_2.jpg) |
-
-
 📞 Voice Call Flow
 | Incoming Call                        | Active Call                        |
 | ------------------------------------ | ---------------------------------- |
 | ![](assets/web/10_call_incoming.jpg) | ![](assets/web/11_call_active.jpg) |
 
+
 ⚙️ Settings
 | Settings                        |
 | ------------------------------- |
 | ![](assets/web/12_settings.jpg) |
+
 
 📱 Mobile Responsiveness
 
@@ -184,7 +193,7 @@ This project aims to solve these challenges by designing and implementing a **pr
 
 ---
 
-## 🧪 Engineering Journey & Optimization
+## 🧪 Engineering Decisions & Optimization
 
 This project went through multiple real-world iterations:
 
@@ -247,54 +256,6 @@ During the development and deployment of this project, several real-world engine
 * Backend Hosting – Render
  
 * Frontend Hosting – Vercel
-
----
-
-## ✨ Features
-
-### 🔐 Authentication
-
-* JWT-based authentication
-
-* Secure HTTP-only cookies
-
-* Login & signup system
-
-### 🧑‍🤝‍🧑 Social Features
-
-* Follow / Unfollow users
-
-* Friend system
-
-* User profiles
-
-### 🖼️ Posts
-
-* Create posts with images/videos
-
-* Like & unlike posts (real-time)
-
-* Comment on posts (real-time)
-
-* View counts & hashtags
-
-### 💬 Real-Time (Socket.IO)
-
-* Live likes & unlikes
-
-* Live comments
-
-* Follow updates
-
-* Chat system
-
-* Voice / video call signaling (WebRTC-ready)
-
-### ☁️ Media Uploads
-
-* Cloudinary integration
-
-* Optimized image & video storage
 
 ---
 
@@ -469,6 +430,6 @@ VITE_SOCKET_URL=https://instagram-9au5.onrender.com
 
 ## 📄 License
 
-This project is licensed under the **MIT** License.
+This project is licensed under the [MIT License](LICENSE).
 
 > If you find this project useful, consider giving it a ⭐ on GitHub.
