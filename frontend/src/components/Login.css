@@ -10,6 +10,8 @@
   max-width: 280px;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .login-card:hover {
@@ -239,7 +241,9 @@
 @media (max-width: 480px) {
   .login-card {
     padding: 14px;
-    max-width: 100%;
+    max-width: calc(100% - 20px);
+    width: calc(100% - 20px);
+    margin: 0 auto;
   }
 
   .login-title {

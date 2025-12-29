@@ -3,11 +3,14 @@
 .auth-page-container {
   position: relative;
   width: 100%;
+  max-width: 100vw;
   height: 100vh;
   overflow: hidden;
+  overflow-x: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .auth-title-container {
@@ -63,10 +66,12 @@
   justify-content: center;
   flex: 1;
   width: 100%;
+  max-width: 100%;
   padding: 80px 20px 20px;
   position: relative;
   z-index: 2;
   overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
   min-height: 0;
 }
@@ -79,6 +84,9 @@
   align-items: flex-start;
   width: 100%;
   max-width: 650px;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0 auto;
 }
 
 /* Animated Side Elements */
@@ -285,19 +293,29 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .auth-content-wrapper {
     padding: 55px 12px 12px;
     align-items: flex-start;
     overflow-y: hidden;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
   }
 
   .auth-forms-container {
     gap: 12px;
     max-width: 100%;
+    width: 100%;
     flex-direction: column;
     align-items: center;
+    padding: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
   }
 
   .auth-side-element {
@@ -325,6 +343,9 @@
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
     overflow: hidden;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .auth-title {
@@ -343,13 +364,22 @@
     justify-content: center;
     align-items: center;
     height: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    left: 0;
+    right: 0;
   }
 
   .auth-content-wrapper {
     padding: 50px 10px 10px;
     align-items: flex-start;
     overflow-y: hidden;
+    overflow-x: hidden;
     justify-content: flex-start;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .auth-forms-container {
@@ -357,6 +387,10 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
   }
 
   .auth-side-element {
