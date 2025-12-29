@@ -81,10 +81,6 @@
   font-weight: 400;
 }
 
-.login-input:not(:placeholder-shown) {
-  background-color: #ffffff;
-}
-
 .login-button {
   width: 100%;
   padding: 8px 16px;
