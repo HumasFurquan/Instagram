@@ -357,17 +357,17 @@
   }
 
   .auth-title {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     letter-spacing: 0.5px;
   }
 
   .auth-title::after {
-    width: 30px;
+    width: 35px;
     height: 2px;
   }
 
   .auth-title-container {
-    padding: 15px 8px 10px;
+    padding: 25px 8px 12px;
     display: flex;
     justify-content: center;
     align-items: center;
