@@ -134,7 +134,7 @@ export default function PostItem({
   
     // ❤️ Trigger vibration ONLY on like
     if (!wasLiked) {
-      triggerHaptic(20); // Instagram-like vibration
+      triggerHaptic(40); // Instagram-like vibration
     }
   
     try {
