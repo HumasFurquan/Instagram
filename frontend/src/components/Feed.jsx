@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import useSocket from '../hooks/useSocket';
 import PostItem from './PostItem';
+import './Feed.css';
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -215,31 +216,38 @@ export default function Feed() {
     navigate('/login', { replace: true });
   }
 
-  // ---------------- Render ----------------
+  // ---------------- Render ---------------- 
   return (
-    <div>
-      <h2>Feed {loading ? '— loading...' : ''}</h2>
-      {posts.length === 0 && !loading && <div>No posts yet.</div>}
-      {posts.map(p => (
-        <div key={p.id} data-post-id={p.id}>
-          <PostItem
-            post={p}
-            user={user}
-            authHeaders={authHeaders}
-            toggleFollow={toggleFollow}
-            pendingRequests={pendingRequests}
-            friendsList={friendsList}
-            sentRequests={sentRequests}
-            onSentRequest={(id) => setSentRequests(prev => [...prev, id])}
-            onUnfriend={(friendId) =>
-              setFriendsList(prev => prev.filter(id => id !== friendId))
-            }
-            onDelete={(postId) =>
-              setPosts(prev => prev.filter(post => post.id !== postId))
-            }
-          />
-        </div>
-      ))}
+    <div className="feed-container">
+      <div className="feed-header">
+        <h2 className="feed-title">Feed</h2>
+        {loading && <span className="feed-loading">Loading...</span>}
+      </div>
+      {posts.length === 0 && !loading && (
+        <div className="feed-empty-state">No posts yet. Start following users to see their posts!</div>
+      )}
+      <div className="feed-posts-list">
+        {posts.map(p => (
+          <div key={p.id} className="feed-post-wrapper" data-post-id={p.id}>
+            <PostItem
+              post={p}
+              user={user}
+              authHeaders={authHeaders}
+              toggleFollow={toggleFollow}
+              pendingRequests={pendingRequests}
+              friendsList={friendsList}
+              sentRequests={sentRequests}
+              onSentRequest={(id) => setSentRequests(prev => [...prev, id])}
+              onUnfriend={(friendId) =>
+                setFriendsList(prev => prev.filter(id => id !== friendId))
+              }
+              onDelete={(postId) =>
+                setPosts(prev => prev.filter(post => post.id !== postId))
+              }
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
