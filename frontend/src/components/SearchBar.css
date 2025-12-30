@@ -1,0 +1,120 @@
+/* SearchBar Component - Instagram Inspired */
+
+/* Wrapper */
+.search-bar-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 400px; /* optional max width */
+    margin: 0 auto 1rem;
+    box-sizing: border-box;
+  }
+  
+  /* Input field */
+  .search-bar-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #dbdbdb;
+    background-color: #7183b5;
+    color: #262626;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+  
+  .search-bar-input::placeholder {
+    color: #c7a8f0;
+    font-weight: 400;
+  }
+  
+  .search-bar-input:focus {
+    border-color: #667eea;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  /* Suggestions dropdown */
+  .search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    color: #000000;
+    background: #fafafa;
+    border: 1px solid #667eea;
+    border-radius: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0 0;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1),
+                0 2px 4px rgba(0, 0, 0, 0.08);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  
+  /* Individual suggestion */
+  .search-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .search-suggestion-item:last-child {
+    border-bottom: none;
+  }
+  
+  .search-suggestion-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  /* Scrollbar styling */
+  .search-suggestions::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .search-suggestions::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+  }
+  
+  .search-suggestions::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .search-bar-wrapper {
+      max-width: 100%;
+    }
+  
+    .search-bar-input {
+      font-size: 0.85rem;
+      padding: 6px 10px;
+    }
+  
+    .search-suggestion-item {
+      font-size: 0.85rem;
+      padding: 6px 10px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .search-bar-input {
+      font-size: 0.8rem;
+      padding: 5px 8px;
+    }
+  
+    .search-suggestion-item {
+      font-size: 0.8rem;
+      padding: 5px 8px;
+    }
+  }
+  
+  /* Accessibility */
+  .search-bar-input:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+  }  
