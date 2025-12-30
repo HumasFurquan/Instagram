@@ -115,23 +115,35 @@ export default function PostItem({
     }
   }, [localPost.liked]);
 
+  // 📳 Mobile haptic feedback (safe)
+  const triggerHaptic = (duration = 20) => {
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(duration);
+    }
+  };
+
   const toggleLike = async () => {
     if (!user) return alert("Please login to like posts.");
     const wasLiked = !!localPost.liked;
-
+  
     setLocalPost(prev => ({
       ...prev,
       liked: !prev.liked,
       likes_count: (prev.likes_count ?? 0) + (prev.liked ? -1 : 1),
     }));
-
+  
+    // ❤️ Trigger vibration ONLY on like
+    if (!wasLiked) {
+      triggerHaptic(20); // Instagram-like vibration
+    }
+  
     try {
       if (!wasLiked) {
         await api.post(`/posts/${localPost.id}/like`, {}, { headers: authHeaders() });
-        socket?.emit("likePost", { postId: localPost.id }); // 👈 safe emit
+        socket?.emit("likePost", { postId: localPost.id });
       } else {
         await api.delete(`/posts/${localPost.id}/like`, { headers: authHeaders() });
-        socket?.emit("unlikePost", { postId: localPost.id }); // 👈 safe emit
+        socket?.emit("unlikePost", { postId: localPost.id });
       }
     } catch (err) {
       // rollback on error
@@ -142,7 +154,7 @@ export default function PostItem({
       }));
       console.error("Like error", err);
     }
-  };
+  };  
 
   const handleCommentAdded = (newComment) => {
     setLocalPost(prev => ({
