@@ -5,6 +5,7 @@ import CommentsSection from "./CommentsSection";
 import { renderContentWithLinks } from "../utils/renderContent";
 import FollowButton from "./FollowButton";
 import useSocket from "../hooks/useSocket";
+import './PostItem.css';
 
 export default function PostItem({ 
   post, 
@@ -102,6 +103,18 @@ export default function PostItem({
     }));
   }, [post]);
 
+  // 🔥 LIKE ANIMATION RESET (PUT IT HERE)
+  useEffect(() => {
+    if (localPost.liked) {
+      const timer = setTimeout(() => {
+        const btn = document.querySelector(".like-btn.animate-like");
+        btn?.classList.remove("animate-like");
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [localPost.liked]);
+
   const toggleLike = async () => {
     if (!user) return alert("Please login to like posts.");
     const wasLiked = !!localPost.liked;
@@ -162,35 +175,27 @@ export default function PostItem({
   };
 
   return (
-    <div style={{ border: "1px solid #ddd", padding: 8, marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img
+    <div className="post-card">
+      <div className="post-header">
+        <div className="post-user-info">
+          <img className="post-avatar"
             src={localPost.profile_picture_url || "/default-avatar.png"}
             alt={localPost.username}
-            style={{ width: 32, height: 32, borderRadius: "50%" }}
           />
-          <b>{localPost.username}</b>
+          <b className="post-username">{localPost.username}</b>
 
           {user && user.id !== localPost.user_id && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <FollowButton
+            <div className="post-actions">
+              <FollowButton className="follow-btn"
                 isFollowing={localPost.is_following_author}
                 onToggle={() => {
                   toggleFollow(localPost.user_id, localPost.is_following_author);
                   setLocalPost(prev => ({ ...prev, is_following_author: !prev.is_following_author }));
                 }}
               />
-              <button
+              <button className={`friend-btn friend-${friendStatus}`}
                 onClick={handleAddFriend}
-                disabled={friendStatus !== "none"}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  backgroundColor: friendStatus === "none" ? "#007bff" : "#ccc",
-                  color: "#fff",
-                  cursor: friendStatus === "none" ? "pointer" : "not-allowed"
-                }}
+                // disabled={friendStatus !== "none"}
               >
                 {friendStatus === "friends" 
                   ? "Friends" 
@@ -203,16 +208,16 @@ export default function PostItem({
             </div>
           )}
 
-          <small style={{ color: "#666", marginLeft: 8 }}>
+          <small className="post-timestamp">
             {new Date(localPost.created_at).toLocaleString()}
           </small>
         </div>
 
-        <div style={{ textAlign: "right", fontSize: 13, color: "#333" }}>
+        <div className="post-meta">
           {localPost.views_count ?? 0} views · {localPost.comments_count ?? 0} comments
 
           {user && user.id === localPost.user_id && (
-          <button
+          <button className="delete-btn"
             onClick={async () => {
               if (!window.confirm("Are you sure you want to delete this post?")) return;
               try {
@@ -225,14 +230,6 @@ export default function PostItem({
                 alert("Failed to delete post. Try again.");
               }
             }}
-            style={{
-              marginLeft: 10,
-              padding: "4px 8px",
-              borderRadius: 4,
-              backgroundColor: "red",
-              color: "white",
-              cursor: "pointer",
-            }}
           >
             🗑️ Delete
           </button>
@@ -240,35 +237,33 @@ export default function PostItem({
         </div>
       </div>
 
-      <p style={{ whiteSpace: "pre-wrap" }}>
+      <p>
         {renderContentWithLinks(localPost.content)}
       </p>
 
       {localPost.image_url && (
-        <div style={{ marginTop: 8 }}>
-          <img
+        <div className="post-image-wrapper">
+          <img className="post-image"
             src={localPost.image_url}
             alt="Post"
-            style={{
-              maxWidth: '300px',   // limit width
-              maxHeight: '300px',  // limit height
-              width: 'auto',       // maintain aspect ratio
-              height: 'auto',
-              borderRadius: 8,
-            }}
           />
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button
-          onClick={toggleLike}
-          style={{ color: localPost.liked ? "red" : "black" }}
-        >
-          {localPost.liked ? "♥️" : "♡"} <span style={{ marginLeft: 6 }}>{localPost.likes_count ?? 0}</span>
-        </button>
+      <div className="post-footer">
+      <button
+        className={`like-btn ${localPost.liked ? "liked animate-like" : ""}`}
+        onClick={toggleLike}
+      >
+        <span className="heart-icon">
+          {localPost.liked ? "❤️" : "🤍"}
+        </span>
+        <span className="like-count">
+          {localPost.likes_count ?? 0}
+        </span>
+      </button>
 
-        <button onClick={() => setShowComments(prev => !prev)}>
+        <button className="comment-btn" onClick={() => setShowComments(prev => !prev)}>
           💬 {localPost.comments_count ?? 0} Comments
         </button>
       </div>

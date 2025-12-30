@@ -1,0 +1,243 @@
+/* ===============================
+   POST CARD
+================================ */
+.post-card {
+    background: #0f0f0f;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 20px;
+    color: #eaeaea;
+  }
+  
+  /* ===============================
+     POST HEADER
+  ================================ */
+  .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .post-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .post-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #667eea;
+  }
+  
+  .post-username {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .post-timestamp {
+    display: block;
+    font-size: 11px;
+    color: #9a9a9a;
+    margin-top: 2px;
+  }
+  
+  /* ===============================
+     FOLLOW / FRIEND ACTIONS
+  ================================ */
+  .post-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 8px;
+  }
+  
+  .follow-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  
+  .friend-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  
+  .friend-none {
+    background: linear-gradient(135deg, #667eea, #8f6eff);
+    color: white;
+  }
+  
+  .friend-sent,
+  .friend-pending {
+    background: #333;
+    color: #aaa;
+    cursor: not-allowed;
+  }
+  
+  .friend-friends {
+    background: #222;
+    color: #4ade80;
+  }
+  
+  /* ===============================
+     POST META (views, delete)
+  ================================ */
+  .post-meta {
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .delete-btn {
+    background: transparent;
+    border: none;
+    color: #ff5c5c;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  
+  .delete-btn:hover {
+    color: #ff1f1f;
+  }
+  
+  /* ===============================
+     POST CONTENT
+  ================================ */
+  .post-card p {
+    margin: 12px 0;
+    line-height: 1.5;
+    font-size: 14px;
+    word-break: break-word;
+  }
+  
+  /* ===============================
+     POST IMAGE
+  ================================ */
+  .post-image-wrapper {
+    margin-top: 10px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #222;
+  }
+  
+  .post-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    display: block;
+  }
+  
+  /* ===============================
+     POST FOOTER (like / comment)
+  ================================ */
+  .post-footer {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+  }
+  
+  .like-btn,
+  .comment-btn {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .like-btn:hover {
+    color: #ff4d6d;
+  }
+  
+  .comment-btn:hover {
+    color: #667eea;
+  }
+  
+  /* ===============================
+     COMMENTS TOGGLE AREA
+  ================================ */
+  .comments-section {
+    margin-top: 12px;
+    border-top: 1px solid #1f1f1f;
+    padding-top: 10px;
+  }
+  
+  /* ===============================
+     LINKS INSIDE POST CONTENT
+  ================================ */
+  .post-card a {
+    color: #667eea;
+    text-decoration: none;
+  }
+  
+  .post-card a:hover {
+    text-decoration: underline;
+  }
+
+  /* ===============================
+   LIKE BUTTON ANIMATION
+================================ */
+.like-btn {
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #ddd;
+    transition: color 0.2s ease;
+  }
+  
+  .like-btn .heart-icon {
+    font-size: 20px;
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+  
+  .like-btn.liked {
+    color: #ff4d6d;
+  }
+  
+  /* 💥 POP ANIMATION */
+  .like-btn.animate-like .heart-icon {
+    animation: like-pop 0.35s ease forwards;
+  }
+  
+  @keyframes like-pop {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.35);
+    }
+    60% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  /* Smooth unlike */
+  .like-btn:not(.liked) .heart-icon {
+    transform: scale(1);
+  }
+  
+  .like-count {
+    font-size: 13px;
+    color: #aaa;
+  }
+  
