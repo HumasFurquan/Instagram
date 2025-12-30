@@ -5,6 +5,7 @@ import ProfilePicture from "./ProfilePicture";
 import api from "../api";
 import FriendRequestsDropdown from "./FriendRequestsDropdown";
 import FriendsDropdown from "./FriendsDropdown";
+import "./Navbar.css";
 
 export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
   const navigate = useNavigate();
@@ -101,45 +102,23 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 0,
-        top: 0,
-        height: "100vh",
-        width: 100,
-        borderRight: "1px solid #ddd",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "16px 0",
-        backgroundColor: "#fff",
-        boxShadow: "2px 0 5px rgba(0,0,0,0.05)",
-        zIndex: 1000,
-      }}
-    >
+    <div className="navbar">
       {/* Top: Logo */}
-      <div
-        style={{ marginBottom: 32, cursor: "pointer" }}
-        onClick={() => navigate("/")}
-      >
-        <h3 style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
-          Insta
-        </h3>
+      <div className="navbar-logo" onClick={() => navigate("/")}>
+      <i class="fa-solid fa-snowflake fa-3x"></i>
       </div>
 
       {/* Middle: Nav Links */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <button onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-          🏠
+      <div className="navbar-links">
+        <button onClick={() => navigate("/")}>
+        <i className="fa-solid fa-house"></i>
         </button>
-        <button onClick={() => navigate("/search")} style={{ cursor: "pointer" }}>
-          🔍
+        <button onClick={() => navigate("/search")}>
+        <i className="fa-solid fa-magnifying-glass"></i>
         </button>
-        <button onClick={() => navigate("/create")} style={{ cursor: "pointer" }}>
-          ➕
-        </button>
+        {/* <button onClick={() => navigate("/create")}>
+        <i className="fa-solid fa-plus"></i>
+        </button> */}
 
         {/* Friend request notifications */}
         {user && (
@@ -149,9 +128,9 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
                 setRequestsOpen((prev) => !prev);
                 setFriendsOpen(false);
               }}
-              style={{ cursor: "pointer" }}
             >
-              🔔 {friendRequests.length > 0 && `(${friendRequests.length})`}
+              <i className="fa-solid fa-bell"></i>
+              {friendRequests.length > 0 && `(${friendRequests.length})`}
             </button>
             {requestsOpen && (
               <FriendRequestsDropdown
@@ -178,44 +157,15 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
                 setRequestsOpen(false);
                 setFriendsOpen(false);
               }}
-              style={{ cursor: "pointer" }}
             >
-              💬 Messages
+              <i className="fa-solid fa-comments"></i> Messages
             </button>
             {messagesOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "36px",
-                  left: "100%",
-                  backgroundColor: "#fff",
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  width: 200,
-                  maxHeight: 300,
-                  overflowY: "auto",
-                  zIndex: 1000,
-                }}
-              >
+              <div className="navbar-dropdown">
                 {friends.map(friend => (
-                  <div
-                    key={friend.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "4px 8px",
-                      borderBottom: "1px solid #eee"
-                    }}
-                  >
+                  <div key={friend.id} className="navbar-dropdown-item"                  >
                     <span>{friend.username}</span>
-                    <button
-                      style={{
-                        padding: "2px 6px",
-                        fontSize: 12,
-                        cursor: "pointer"
-                      }}
-                      onClick={() => handleOpenChat(friend)}
+                    <button onClick={() => handleOpenChat(friend)}
                     >
                       Chat
                     </button>
@@ -234,9 +184,8 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
                 setFriendsOpen((prev) => !prev);
                 setRequestsOpen(false);
               }}
-              style={{ cursor: "pointer" }}
             >
-              👥 Friends {friends.length > 0 && `(${friends.length})`}
+              <i className="fa-solid fa-user-group"></i> Friends {friends.length > 0 && `(${friends.length})`}
             </button>
             {friendsOpen && (
               <FriendsDropdown
@@ -250,12 +199,12 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
         )}
 
         <button onClick={() => navigate("/settings")} style={{ cursor: "pointer" }}>
-          ⚙️ Settings
+        <i className="fa-solid fa-gear"></i> Settings
         </button>
       </div>
 
       {/* Bottom: Profile */}
-      <div style={{ marginBottom: 16 }}>
+      <div  className="navbar-profile">
         <ProfilePicture
           user={user}
           authHeaders={authHeaders}
