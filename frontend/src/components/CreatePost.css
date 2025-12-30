@@ -1,0 +1,256 @@
+/* Create Post - Instagram Inspired */
+
+/* Card */
+.create-post-card {
+  background: #000000;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1),
+              0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  max-width: 500px;
+  margin: 0 auto 1rem;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.create-post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2),
+              0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Title */
+.create-post-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #262626;
+  background: linear-gradient(135deg, #8a9cff 0%, #b084ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Textarea */
+.create-post-textarea {
+    width: 100%;
+    resize: none;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1.5px solid #dbdbdb;
+    background-color: #fafafa;   /* ✅ FIXED */
+    font-size: 0.9rem;
+    color: #262626;              /* ✅ black text */
+    transition: background-color 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+    box-sizing: border-box;
+    outline: none;
+  }
+  
+  .create-post-textarea:focus {
+    background-color: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .create-post-textarea:not(:focus) {
+    background-color: #fafafa;
+  }
+  
+  .create-post-textarea::placeholder {
+    color: #8e8e8e;
+  }  
+
+/* Hidden file input */
+.hidden-file-input {
+  display: none;
+}
+
+/* Action buttons */
+.create-post-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Image button */
+.image-button {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1.5px solid #667eea;
+  background: #000000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-button:hover {
+    background: #667eea;
+    color: #ffffff;
+  }
+
+/* Post button */
+.post-button {
+  flex: 1;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+
+.post-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.post-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Image preview */
+.image-preview {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.image-preview img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #dbdbdb;
+}
+
+/* Remove image */
+/* .remove-image {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  color: #c33;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+} */
+
+/* Image wrapper */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  /* Preview image */
+  .image-wrapper img {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+  }
+  
+  /* ❌ Overlay button */
+  .remove-image-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  
+    width: 28px;
+    height: 28px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+  
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+  
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  /* Icon size */
+  .remove-image-overlay i {
+    font-size: 0.9rem;
+  }
+  
+  /* Show on hover (Instagram style) */
+  .image-wrapper:hover .remove-image-overlay {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+/* -------------------- */
+/* Responsive Design */
+/* -------------------- */
+
+@media (max-width: 768px) {
+  .create-post-card {
+    padding: 14px;
+  }
+
+  .create-post-title {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-post-card {
+    padding: 12px;
+    width: calc(100% - 20px);
+  }
+
+  .create-post-textarea {
+    font-size: 0.85rem;
+    padding: 8px;
+  }
+
+  .image-button,
+  .post-button {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+}
+
+/* -------------------- */
+/* Dark Mode */
+/* -------------------- */
+
+/* @media (prefers-color-scheme: dark) {
+  .create-post-card {
+    background: #1a1a1a;
+  }
+
+  .create-post-textarea {
+    background: #262626;
+    border-color: #404040;
+    color: #ffffff;
+  }
+
+  .image-button {
+    background: #262626;
+    border-color: #404040;
+    color: #ffffff;
+  }
+
+  .image-preview img {
+    border-color: #404040;
+  }
+} */
+
+/* Accessibility */
+.create-post-textarea:focus-visible,
+.image-button:focus-visible,
+.post-button:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
