@@ -1,5 +1,5 @@
 // src/components/PostItem.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
 import CommentsSection from "./CommentsSection";
 import { renderContentWithLinks } from "../utils/renderContent";
@@ -23,6 +23,8 @@ export default function PostItem({
   const [localPost, setLocalPost] = useState(post);
   const [showComments, setShowComments] = useState(false);
   const [friendStatus, setFriendStatus] = useState("none"); 
+  const lastTapRef = useRef(0);
+  const [showBigHeart, setShowBigHeart] = useState(false);
 
   const socket = useSocket({
     onPostLiked: ({ postId, userId, likes_count }) => {
@@ -156,6 +158,24 @@ export default function PostItem({
     }
   };  
 
+  const handleImageTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+  
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // 🔁 Toggle like (both directions)
+      toggleLike();
+  
+      // 💥 Show heart ONLY when liking
+      if (!localPost.liked) {
+        setShowBigHeart(true);
+        setTimeout(() => setShowBigHeart(false), 600);
+      }
+    }
+  
+    lastTapRef.current = now;
+  };   
+
   const handleCommentAdded = (newComment) => {
     setLocalPost(prev => ({
       ...prev,
@@ -254,13 +274,21 @@ export default function PostItem({
       </p>
 
       {localPost.image_url && (
-        <div className="post-image-wrapper">
-          <img className="post-image"
-            src={localPost.image_url}
-            alt="Post"
-          />
-        </div>
-      )}
+      <div
+        className="post-image-wrapper"
+        onClick={handleImageTap}
+      >
+        <img
+          className="post-image"
+          src={localPost.image_url}
+          alt="Post"
+        />
+
+        {showBigHeart && (
+          <div className="big-heart">❤️</div>
+        )}
+      </div>
+    )}
 
       <div className="post-footer">
       <button
