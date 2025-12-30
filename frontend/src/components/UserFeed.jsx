@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../api';
 import PostItem from './PostItem';
 import useSocket from '../hooks/useSocket';
+import './UserFeed.css';
 
 export default function UserFeed({ user, authHeaders }) {
   const { userId } = useParams();
@@ -159,6 +160,7 @@ export default function UserFeed({ user, authHeaders }) {
         await api.delete(`/follows/${targetUserId}`, { headers: authHeaders() });
       }
     } catch (err) {
+      console.error('Failed to toggle follow', err);
       setPosts(prev =>
         prev.map(p =>
           p.user_id === targetUserId
@@ -171,33 +173,55 @@ export default function UserFeed({ user, authHeaders }) {
   }
 
   // ---------------- Render ----------------
-  if (loading) return <h2>Loading user profile...</h2>;
+  if (loading) return (
+    <div className="userfeed-container">
+      <div className="userfeed-header">
+        <h2 className="userfeed-title">User Posts</h2>
+        <span className="userfeed-loading">Loading...</span>
+      </div>
+    </div>
+  );
 
   if (!canView)
     return (
-      <div style={{ textAlign: 'center', marginTop: 40 }}>
-        <h2>🔒 This account is private</h2>
-        <p>You must be friends or approved to view their posts.</p>
+      <div className="userfeed-container">
+        <div className="userfeed-header">
+          <h2 className="userfeed-title">{userProfile?.username || 'User'}’s Posts</h2>
+        </div>
+        <div className="userfeed-private">
+          <h2>🔒 This account is private</h2>
+          <p>You must be friends or approved to view their posts.</p>
+        </div>
       </div>
     );
 
   return (
-    <div>
-      <h2>{userProfile?.username || 'User'}’s Posts</h2>
-      {!loading && posts.length === 0 && <div>No posts yet.</div>}
-      {posts.map(p => (
-        <PostItem
-          key={p.id}
-          post={p}
-          user={user}
-          authHeaders={authHeaders}
-          toggleFollow={toggleFollow}
-          friendsList={friendsList}
-          pendingRequests={pendingRequests}
-          sentRequests={sentRequests}
-          onDelete={postId => setPosts(prev => prev.filter(post => post.id !== postId))}
-        />
-      ))}
+    <div className="userfeed-container">
+      <div className="userfeed-header">
+        <h2 className="userfeed-title">{userProfile?.username || 'User'}’s Posts</h2>
+        {loading && <span className="userfeed-loading">Loading...</span>}
+      </div>
+
+      {!loading && posts.length === 0 && (
+        <div className="userfeed-empty">No posts yet.</div>
+      )}
+
+      <div className="userfeed-posts">
+        {posts.map(p => (
+          <div key={p.id} className="userfeed-post-wrapper">
+            <PostItem
+              post={p}
+              user={user}
+              authHeaders={authHeaders}
+              toggleFollow={toggleFollow}
+              friendsList={friendsList}
+              pendingRequests={pendingRequests}
+              sentRequests={sentRequests}
+              onDelete={postId => setPosts(prev => prev.filter(post => post.id !== postId))}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
