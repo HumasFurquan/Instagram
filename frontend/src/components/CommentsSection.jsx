@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
+import "./CommentsSection.css";
 
 export default function CommentsSection({ postId, currentUser, onCommentAdded }) { // ✅ added onCommentAdded
   const [comments, setComments] = useState([]);
@@ -59,26 +60,34 @@ export default function CommentsSection({ postId, currentUser, onCommentAdded })
   }
 
   return (
-    <div style={{ marginTop: 8 }}>
-      <form onSubmit={submitComment} style={{ marginBottom: 8 }}>
+    <div className="comments-section">
+      <form className="comment-form" onSubmit={submitComment}>
         <input
+          className="comment-input"
           placeholder="Write a comment..."
           value={text}
           onChange={e => setText(e.target.value)}
-          style={{ width: '70%', marginRight: 8 }}
         />
-        <button type="submit">Post</button>
+        <button className="comment-post-btn" type="submit">Comment</button>
       </form>
 
-      {loading ? <div>Loading comments…</div>
-        : comments.length === 0 ? <div style={{ color: '#666' }}>No comments yet</div>
-        : comments.map(c => (
-          <div key={c.id} style={{ borderTop: '1px solid #eee', paddingTop: 6, marginTop: 6 }}>
-            <b>{c.username}</b> <small style={{ color: '#666' }}>{new Date(c.created_at).toLocaleString()}</small>
-            <div style={{ whiteSpace: 'pre-wrap' }}>{c.content}</div>
+      {loading ? (
+        <div className="comment-loading">Loading comments…</div>
+      ) : comments.length === 0 ? (
+        <div className="comment-empty">No comments yet</div>
+      ) : (
+        comments.map(c => (
+          <div key={c.id} className="comment-item">
+            <div className="comment-header">
+              <span className="comment-username">{c.username}</span>
+              <span className="comment-time">
+                {new Date(c.created_at).toLocaleString()}
+              </span>
+            </div>
+            <div className="comment-content">{c.content}</div>
           </div>
         ))
-      }
+      )}
     </div>
   );
 }

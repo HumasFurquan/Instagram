@@ -1,0 +1,125 @@
+/* ===========================
+   COMMENTS SECTION
+=========================== */
+.comments-section {
+    margin: 8px clamp(8px, 3vw, 16px);
+    padding: 10px clamp(10px, 3vw, 14px);
+    background: #ffffff;
+    border-radius: clamp(10px, 3vw, 16px);
+    box-sizing: border-box;
+  }  
+  
+  /* ===========================
+     COMMENT FORM
+  =========================== */
+  .comment-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb; /* 👈 line below comment button */
+  }
+  
+  .comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 20px;
+    border: 1px solid #dbdbdb;
+    outline: none;
+    background: #fafafa;
+    min-width: 0; /* 🔑 important for flex shrink */
+    }
+
+    /* 📱 Mobile view */
+    @media (max-width: 480px) {
+    .comment-input {
+        font-size: 13px;
+        padding: 6px 10px;
+        max-width: 75%; /* 🔥 shrink input on X-axis */
+    }
+    }
+  
+  .comment-input:focus {
+    border-color: #a5b4fc;
+    background: #ffffff;
+  }
+  
+  .comment-post-btn {
+    background: transparent;
+    /* border: none; */
+    color: rgb(74, 137, 233);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(74, 137, 233);
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+  
+  .comment-post-btn:hover {
+    background-color: rgb(74, 137, 233);
+    color: #fafafa;
+  }
+
+  /* 📱 Mobile responsiveness */
+    @media (max-width: 480px) {
+    .comment-post-btn {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 14px;
+    }
+  }
+  
+  /* ===========================
+     STATES
+  =========================== */
+  .comment-loading,
+  .comment-empty {
+    font-size: 13px;
+    color: #8e8e8e;
+    padding: 6px 0;
+  }
+  
+  /* ===========================
+     COMMENT ITEM
+  =========================== */
+  .comment-item {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+    background: rgba(0, 85, 255, 0.05);
+  }
+  
+  .comment-item:last-child {
+    border-bottom: none;
+  }  
+  
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+  
+  .comment-username {
+    font-weight: 600;
+    color: #262626;
+  }
+  
+  .comment-time {
+    font-size: 11px;
+    color: #8e8e8e;
+  }
+  
+  /* ===========================
+     COMMENT CONTENT
+  =========================== */
+  .comment-content {
+    font-size: 14px;
+    color: #262626;
+    margin-top: 2px;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
