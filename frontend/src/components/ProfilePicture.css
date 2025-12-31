@@ -1,0 +1,122 @@
+/* ===========================
+   PROFILE PICTURE CONTAINER
+=========================== */
+.profile-picture-container {
+    width: 100%;
+    max-width: 72px;      /* 👈 keep inside navbar */
+    box-sizing: border-box;
+    overflow: visible;
+  }
+  
+  /* ===========================
+     HEADER
+  =========================== */
+  .profile-picture-header {
+    display: flex;
+    justify-content: center;   /* horizontal center */
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  .profile-picture-header i {
+    font-size: 36px;
+    color: #e0e7ff;
+    transition: opacity 0.3s ease;
+  }
+  
+  /* ===========================
+     IMAGE WRAPPER
+  =========================== */
+  .profile-picture-wrapper {
+    position: relative;
+    width: 64px;
+    height: 64px;
+  }
+  
+  .profile-picture-wrapper img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+  
+  /* ===========================
+     OVERLAY (INSTAGRAM STYLE)
+  =========================== */
+  .profile-picture-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  
+  .profile-picture-overlay i {
+    color: #ffffff;
+    font-size: 16px;
+  }
+  
+  .profile-picture-wrapper:hover .profile-picture-overlay {
+    opacity: 1;
+  }
+  
+  /* ===========================
+     BUTTONS
+  =========================== */
+  .profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+  
+  .profile-btn i {
+    font-size: 12px;
+  }
+  
+  /* ADD */
+  .profile-btn.add {
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    color: #ffffff;
+  }
+  
+  .profile-btn.add:hover {
+    background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+  }
+  
+  /* DELETE */
+  .profile-btn.delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fecaca;
+  }
+  
+  .profile-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+  }
+  
+  /* ===========================
+     DISABLED
+  =========================== */
+  .profile-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }  
+
+  /* Completely hide native file input */
+  .profile-file-input {
+    display: none;
+  }

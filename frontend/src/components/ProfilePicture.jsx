@@ -1,6 +1,7 @@
 // src/components/ProfilePicture.jsx
 import React, { useState, useRef, useEffect } from "react";
 import api from "../api";
+import "./ProfilePicture.css";
 
 export default function ProfilePicture({ user, authHeaders, onUpdateUser }) {
   const [profilePic, setProfilePic] = useState({
@@ -119,8 +120,13 @@ export default function ProfilePicture({ user, authHeaders, onUpdateUser }) {
   }
 
   return (
-    <div style={{ textAlign: "center", marginTop: 20 }}>
-      <h2>👤 Profile Picture</h2>
+    <div className="profile-picture-container">
+      <div className="profile-picture-header">
+        {!profilePic.url && (
+          <i className="fa-solid fa-user-circle"></i>
+        )}
+        {/* <span>Profile Picture</span> */}
+      </div>
 
       {/* Hidden File Input */}
       <input
@@ -128,54 +134,38 @@ export default function ProfilePicture({ user, authHeaders, onUpdateUser }) {
         accept="image/*"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: "none" }}
+        className="profile-file-input"
       />
 
       {profilePic.url ? (
         <>
-          <img
-            src={profilePic.url}
-            alt="Profile"
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "2px solid #007bff",
-            }}
-          />
-          <br />
+        <div className="profile-picture-wrapper">
+            <img src={profilePic.url} alt="Profile" />
+            <div
+              className="profile-picture-overlay"
+              onClick={triggerFileDialog}
+            >
+              <i className="fa-solid fa-camera"></i>
+            </div>
+        </div>
+
           <button
+            className="profile-btn delete"
             onClick={handleDelete}
             disabled={loading}
-            style={{
-              marginTop: 12,
-              padding: "8px 16px",
-              border: "none",
-              borderRadius: "8px",
-              backgroundColor: loading ? "#aaa" : "#dc3545",
-              color: "white",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
           >
-            {loading ? "Deleting..." : "Delete Picture"}
+            <i className="fa-solid fa-trash"></i>
+            {loading ? "Deleting..." : "Remove"}
           </button>
         </>
       ) : (
         <button
+          className="profile-btn add"
           onClick={triggerFileDialog}
           disabled={loading}
-          style={{
-            padding: "10px 18px",
-            border: "none",
-            borderRadius: "8px",
-            backgroundColor: "#007bff",
-            color: "white",
-            cursor: loading ? "not-allowed" : "pointer",
-            marginTop: 10,
-          }}
         >
-          {loading ? "Uploading..." : "Add Profile Picture"}
+          <i className="fa-solid fa-plus"></i>
+          {loading ? "Uploading..." : "Add Picture"}
         </button>
       )}
     </div>
