@@ -452,16 +452,22 @@ export default function ChatWindow({ user, authHeaders }) {
       </div>
 
       {/* Input */}
-      <div style={{ display: "flex", borderTop: "1px solid #ddd" }}>
+      <div className="chat-input-bar">
         <input
           type="text"
+          className="chat-input"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          style={{ flex: 1, padding: "8px 12px", border: "none", outline: "none" }}
-          onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") sendMessage();
+          }}
         />
-        <button onClick={sendMessage} style={{ padding: "0 16px", border: "none", cursor: "pointer", backgroundColor: "#007bff", color: "#fff" }}>
+
+        <button
+          className="chat-send-btn"
+          onClick={sendMessage}
+        >
           Send
         </button>
       </div>

@@ -323,3 +323,82 @@
       padding: 7px 12px;
     }
   }  
+
+  /* ===========================
+   CHAT INPUT BAR
+=========================== */
+.chat-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+  
+  /* ===========================
+     INPUT FIELD
+  =========================== */
+  .chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    outline: none;
+    background: #f9fafb;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+    color: #111827;
+  }
+  
+  .chat-input::placeholder {
+    color: #9ca3af;
+  }
+  
+  .chat-input:focus {
+    border-color: rgb(74, 137, 233);
+    box-shadow: 0 0 0 2px rgba(74, 137, 233, 0.15);
+    background: #ffffff;
+  }
+  
+  /* ===========================
+     SEND BUTTON
+  =========================== */
+  .chat-send-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    background: rgb(74, 137, 233);
+    color: #ffffff;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+  
+  .chat-send-btn:hover {
+    background: rgb(56, 120, 220);
+  }
+  
+  .chat-send-btn:active {
+    transform: scale(0.95);
+  }
+  
+  /* ===========================
+     MOBILE RESPONSIVE
+  =========================== */
+  @media (max-width: 480px) {
+    .chat-input-bar {
+      padding: 8px;
+    }
+  
+    .chat-input {
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+  
+    .chat-send-btn {
+      padding: 7px 14px;
+      font-size: 13px;
+    }
+  }  
