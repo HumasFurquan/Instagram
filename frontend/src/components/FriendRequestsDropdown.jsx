@@ -1,5 +1,6 @@
 // src/components/FriendRequestsDropdown.jsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
+import "./FriendRequestsDropdown.css";
 
 export default function FriendRequestsDropdown({
   requests,
@@ -7,60 +8,53 @@ export default function FriendRequestsDropdown({
   onReject,
   onClose
 }) {
-  const dropdownRef = useRef();
+  const dropdownRef = useRef(null);
 
-  // Optional: close dropdown when clicking outside
+  // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        if (onClose) onClose();
+        onClose?.();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
+  if (!requests || requests.length === 0) return null;
+
   return (
-    <div ref={dropdownRef} style={{ position: 'relative' }}>
-      <button>Notifications ({requests.length})</button>
-      {requests.length > 0 && (
-        <ul
-          style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            listStyle: 'none',
-            padding: 8,
-            zIndex: 100
-          }}
-        >
-          {requests.map((r) => (
-            <li
-              key={r.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 4
-              }}
-            >
-              <img
-                src={r.profile_picture_url || '/default-avatar.png'}
-                alt={r.username || `User ${r.sender_id}`}
-                width={24}
-                height={24}
-                style={{ borderRadius: '50%' }}
-              />
-              <span>{r.username || `User ${r.sender_id}`}</span>
-              <button onClick={() => onAccept(r.id)}>Accept</button>
-              <button onClick={() => onReject(r.id)}>Decline</button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div ref={dropdownRef} className="friend-requests-dropdown">
+      {requests.map((r) => (
+        <li key={r.id} className="friend-request-item">
+        <div className="friend-request-top">
+          <img
+            src={r.profile_picture_url || "/default-avatar.png"}
+            alt={r.username || `User ${r.sender_id}`}
+            className="friend-request-avatar"
+          />
+          <span className="friend-request-name">
+            {r.username || `User ${r.sender_id}`}
+          </span>
+        </div>
+      
+        <div className="friend-request-actions">
+          <button
+            className="friend-request-btn accept"
+            onClick={() => onAccept(r.id)}
+          >
+            Accept
+          </button>
+          <button
+            className="friend-request-btn reject"
+            onClick={() => onReject(r.id)}
+          >
+            Decline
+          </button>
+        </div>
+      </li>       
+      ))}
     </div>
   );
 }

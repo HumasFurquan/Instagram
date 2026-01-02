@@ -1,0 +1,196 @@
+/* ===========================
+   WRAPPER
+=========================== */
+.friend-requests-wrapper {
+    position: relative;
+  }
+  
+  /* ===========================
+     TRIGGER BUTTON
+  =========================== */
+  .friend-requests-trigger {
+    position: relative;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #262626;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+  }
+  
+  .friend-requests-trigger:hover {
+    background: rgba(74, 137, 233, 0.08);
+  }
+  
+  /* ===========================
+     BADGE
+  =========================== */
+  .friend-requests-badge {
+    margin-left: 6px;
+    background: rgb(74, 137, 233);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+  
+  /* ===========================
+     DROPDOWN
+  =========================== */
+  .friend-requests-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 260px;
+    background: #ffffff;
+    border: 1px solid #dbdbdb;
+    border-radius: 12px;
+    list-style: none;
+    padding: 8px;
+    z-index: 2000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }  
+
+  .friend-request-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }  
+  
+  /* ===========================
+     REQUEST ITEM
+  =========================== */
+  .friend-request-item {
+    display: flex;
+    flex-direction: column;   /* ✅ CRITICAL */
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 8px;
+  }  
+  
+  .friend-request-item:hover {
+    background: #f5f7ff;
+  }
+  
+  /* ===========================
+     AVATAR
+  =========================== */
+  .friend-request-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  /* ===========================
+     USERNAME
+  =========================== */
+  .friend-request-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: #262626;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* ===========================
+     ACTION BUTTONS
+  =========================== */
+  .friend-request-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+  
+  /* ACCEPT */
+  .friend-request-btn.accept {
+    background: rgb(74, 137, 233);
+    color: #ffffff;
+  }
+  
+  .friend-request-btn.accept:hover {
+    background: rgb(56, 120, 220);
+  }
+  
+  /* REJECT */
+  .friend-request-btn.reject {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+  }
+  
+  .friend-request-btn.reject:hover {
+    background: rgba(239, 68, 68, 0.3);
+  }
+  
+  /* TAP FEEDBACK */
+  .friend-request-btn:active {
+    transform: scale(0.92);
+  }
+  
+  /* ===========================
+     MOBILE RESPONSIVE
+  =========================== */
+  @media (max-width: 480px) {
+    .friend-requests-dropdown {
+      width: 220px;
+      right: -8px;
+    }
+  
+    .friend-request-name {
+      font-size: 12px;
+    }
+  
+    .friend-request-btn {
+      padding: 3px 6px;
+      font-size: 11px;
+    }
+  }
+  
+  /* ===========================
+   USER ROW
+=========================== */
+.friend-request-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  /* ===========================
+     ACTIONS (Y AXIS)
+  =========================== */
+  .friend-request-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    width: 100%;
+  }  
+  
+  /* Buttons full width on mobile */
+  @media (max-width: 480px) {
+    .friend-request-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .friend-request-actions {
+      width: 100%;
+    }
+  
+    .friend-request-btn {
+      flex: 0;
+    }
+  }  
