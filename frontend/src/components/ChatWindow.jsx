@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import VideoCall from "./VideoCall";
 import useSocket from "../hooks/useSocket";
+import "./ChatWindow.css"
 
 const PC_CONFIG = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -423,34 +424,28 @@ export default function ChatWindow({ user, authHeaders }) {
       </div>
 
       {callState === "ringing" && incomingCaller && (
-      <div style={{
-        position: "fixed",
-        top: 20,
-        right: 20,
-        padding: 12,
-        background: "#ffeeba",
-        border: "1px solid #ddd",
-        borderRadius: 8,
-        zIndex: 999,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}>
-        <div>Incoming call from <b>{incomingCaller.meta?.username || incomingCaller.id}</b></div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={acceptCall} style={{ cursor: "pointer", backgroundColor: "green", color: "#fff" }}>Accept</button>
-          <button onClick={declineCall} style={{ cursor: "pointer", backgroundColor: "red", color: "#fff" }}>Decline</button>
+      <div className="incoming-call-dropdown">
+        <div className="incoming-call-name">
+          Incoming call from
+          <span>{incomingCaller.meta?.username || incomingCaller.id}</span>
+        </div>
+        <div className="incoming-call-actions">
+          <button className="friend-request-btn accept" onClick={acceptCall}>Accept</button>
+          <button className="friend-request-btn reject" onClick={declineCall}>Decline</button>
         </div>
       </div>
     )}
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", height: 400, padding: "8px 16px", backgroundColor: "#f9f9f9" }}>
+      <div className="chat-messages">
         {messages.map((msg) => (
-          <div key={msg.id} style={{ textAlign: msg.sender_id === user.id ? "right" : "left", marginBottom: 8 }}>
-            <span style={{ display: "inline-block", padding: "6px 12px", borderRadius: 16, backgroundColor: msg.sender_id === user.id ? "#DCF8C6" : "#fff", border: "1px solid #ddd", maxWidth: "70%" }}>
-              {msg.content}
-            </span>
+          <div
+            key={msg.id}
+            className={`chat-message ${
+              msg.sender_id === user.id ? "sent" : "received"
+            }`}
+          >
+            <span className="chat-bubble">{msg.content}</span>
           </div>
         ))}
         <div ref={messagesEndRef} />
