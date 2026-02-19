@@ -105,7 +105,7 @@ export default function Navbar({ user, authHeaders, onUpdateUser, socket }) {
     <div className="navbar">
       {/* Top: Logo */}
       <div className="navbar-logo" onClick={() => navigate("/")}>
-      <i class="fa-solid fa-snowflake fa-3x"></i>
+      <i className="fa-solid fa-snowflake fa-3x"></i>
       </div>
 
       {/* Middle: Nav Links */}
