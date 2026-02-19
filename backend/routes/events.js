@@ -15,17 +15,22 @@ router.post('/', auth, async (req, res) => {
     if (!postId || !event_type) return res.status(400).json({ error: 'postId and event_type required' });
 
     // insert event (value stored as JSON)
-    await pool.query('INSERT INTO events (user_id, post_id, event_type, value) VALUES (?, ?, ?, ?)',
+    await pool.query(
+      'INSERT INTO events (user_id, post_id, event_type, value) VALUES ($1, $2, $3, $4)',
       [userId, postId, event_type, JSON.stringify(value || null)]
     );
 
-    // if it's a 'view' event, ensure the unique views table has a row (INSERT IGNORE)
+    // if it's a 'view' event, ensure the unique views table has a row
     if (event_type === 'view') {
-      const [r] = await pool.query('INSERT IGNORE INTO views (user_id, post_id) VALUES (?, ?)', [userId, postId]);
+      const r = await pool.query(
+        'INSERT INTO views (user_id, post_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [userId, postId]
+      );
+
       // if a new row was inserted, emit the updated view count
-      if (r.affectedRows > 0) {
-        const [cntRows] = await pool.query('SELECT COUNT(*) AS views_count FROM views WHERE post_id = ?', [postId]);
-        const views_count = cntRows[0].views_count;
+      if (r.rowCount > 0) {
+        const cntRows = await pool.query('SELECT COUNT(*) AS views_count FROM views WHERE post_id = $1', [postId]);
+        const views_count = cntRows.rows[0].views_count;
         const io = req.app.get('io');
         if (io) io.emit('post_viewed', { postId: Number(postId), views_count });
       }
