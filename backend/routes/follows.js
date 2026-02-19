@@ -16,10 +16,16 @@ router.post('/:userId', auth, async (req, res) => {
     const followeeId = Number(req.params.userId);
     if (followerId === followeeId) return res.status(400).json({ error: 'Cannot follow yourself' });
 
-    await pool.query('INSERT IGNORE INTO follows (follower_id, followee_id) VALUES (?, ?)', [followerId, followeeId]);
+    await pool.query(
+      'INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [followerId, followeeId]
+    );
 
-    const [cnt] = await pool.query('SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = ?', [followeeId]);
-    const followers_count = cnt[0].followers_count;
+    const cntRes = await pool.query(
+      'SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = $1',
+      [followeeId]
+    );
+    const followers_count = cntRes.rows[0].followers_count;
 
     emit(req, 'follow_updated', { followeeId, followerId, isFollowing: true, followers_count });
 
@@ -37,10 +43,16 @@ router.delete('/:userId', auth, async (req, res) => {
     const followeeId = Number(req.params.userId);
     if (followerId === followeeId) return res.status(400).json({ error: 'Cannot unfollow yourself' });
 
-    await pool.query('DELETE FROM follows WHERE follower_id = ? AND followee_id = ?', [followerId, followeeId]);
+    await pool.query(
+      'DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2',
+      [followerId, followeeId]
+    );
 
-    const [cnt] = await pool.query('SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = ?', [followeeId]);
-    const followers_count = cnt[0].followers_count;
+    const cntRes = await pool.query(
+      'SELECT COUNT(*) AS followers_count FROM follows WHERE followee_id = $1',
+      [followeeId]
+    );
+    const followers_count = cntRes.rows[0].followers_count;
 
     emit(req, 'follow_updated', { followeeId, followerId, isFollowing: false, followers_count });
 
@@ -55,20 +67,20 @@ router.delete('/:userId', auth, async (req, res) => {
 router.get('/suggestions', auth, async (req, res) => {
   try {
     const currentUserId = Number(req.user.id);
-    const [rows] = await pool.query(
+    const rowsRes = await pool.query(
       `SELECT u.id, u.username, COUNT(f.follower_id) AS followers_count,
               CASE WHEN fol.follower_id IS NULL THEN 0 ELSE 1 END AS already_following
        FROM users u
        LEFT JOIN follows f ON f.followee_id = u.id
-       LEFT JOIN follows fol ON fol.followee_id = u.id AND fol.follower_id = ?
-       WHERE u.id != ?
+       LEFT JOIN follows fol ON fol.followee_id = u.id AND fol.follower_id = $1
+       WHERE u.id != $1
        GROUP BY u.id
        ORDER BY followers_count DESC
        LIMIT 50`,
-      [currentUserId, currentUserId]
+      [currentUserId]
     );
 
-    res.json(rows);
+    res.json(rowsRes.rows);
   } catch (err) {
     console.error('Suggestions error', err);
     res.status(500).json({ error: 'Server error fetching suggestions' });
