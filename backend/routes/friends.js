@@ -125,8 +125,8 @@ router.get("/", auth, async (req, res) => {
     const rows = await pool.query(
       `SELECT u.id, u.username, u.profile_picture_url
        FROM friend_requests fr
-       JOIN users u ON (u.id=fr.sender_id OR u.id=fr.receiver_id) AND u.id!=$1
-       WHERE (fr.sender_id=$2 OR fr.receiver_id=$3) AND fr.status='accepted'`,
+       JOIN users u ON (u.id = fr.sender_id OR u.id = fr.receiver_id) AND u.id != $1
+       WHERE (fr.sender_id = $2 OR fr.receiver_id = $3) AND fr.status = 'accepted'`,
       [userId, userId, userId]
     );
     res.json(rows.rows);
@@ -144,8 +144,8 @@ router.delete("/:friendId", auth, async (req, res) => {
   try {
     const result = await pool.query(
       `DELETE FROM friend_requests 
-       WHERE status='accepted' 
-       AND ((sender_id=$1 AND receiver_id=$2) OR (sender_id=$3 AND receiver_id=$4))`,
+       WHERE status = 'accepted' 
+       AND ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $3 AND receiver_id = $4))`,
       [userId, friendId, friendId, userId]
     );
 
